@@ -32,6 +32,9 @@ const PREFIX = '=';
 const BOT_NAME = 'ApproveX';
 const FOOTER = 'ApproveX — Credits to autotem';
 
+/** Banner image URL used in key embeds. */
+const BANNER = 'https://cdn.discordapp.com/attachments/1493327393736233200/1493354077206216825/tmqzj14.png?ex=69dea9dd&is=69dd585d&hm=2cbefd82d84f21863316b4f207243f6dcbc0da967040cb35aa56e1e95cf0be6f&';
+
 /** Role IDs. */
 const ROLES = {
   staff: process.env.STAFF_ROLE_ID || '1493262996158287882',
@@ -46,4 +49,4 @@ const CHANNELS = {
   vouch:      process.env.VOUCH_CHANNEL_ID || null,
 };
 
-module.exports = { EMBED_COLOR, E, PREFIX, BOT_NAME, FOOTER, ROLES, CHANNELS };
+module.exports = { EMBED_COLOR, E, PREFIX, BOT_NAME, FOOTER, BANNER, ROLES, CHANNELS };

@@ -1,7 +1,7 @@
 // =tos — Send the Terms of Service embed tailored for digital goods.
 
 const { makeEmbed } = require('../../utils/embed');
-const { E } = require('../../utils/constants');
+const { E, BANNER } = require('../../utils/constants');
 
 module.exports = {
   name: 'tos',
@@ -11,6 +11,7 @@ module.exports = {
 
     const embed = makeEmbed({
       title: `${E.star} ApproveX — Terms of Service`,
+      image: BANNER,
     });
 
     embed.setDescription([

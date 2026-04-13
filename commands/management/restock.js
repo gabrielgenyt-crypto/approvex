@@ -1,7 +1,7 @@
 // =restock [item] [howmany] [which ping] — Send a restock announcement embed.
 
 const { makeEmbed, errorEmbed } = require('../../utils/embed');
-const { E, ROLES } = require('../../utils/constants');
+const { E, ROLES, BANNER } = require('../../utils/constants');
 
 module.exports = {
   name: 'restock',
@@ -69,6 +69,7 @@ module.exports = {
         `${E.arrow} Grab yours before they're gone!`,
         `${E.ticket} Open a ticket to purchase.`,
       ].join('\n'),
+      image: BANNER,
     });
 
     await message.channel.send({

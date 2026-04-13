@@ -2,7 +2,7 @@
 
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
-const { E } = require('../../utils/constants');
+const { E, BANNER } = require('../../utils/constants');
 
 module.exports = {
   name: 'ticketpanel',
@@ -20,6 +20,7 @@ module.exports = {
         `${E.star} A staff member will assist you shortly.`,
         `${E.lock} Your ticket is private and only visible to you and staff.`,
       ].join('\n'),
+      image: BANNER,
     });
 
     const row = new ActionRowBuilder().addComponents(

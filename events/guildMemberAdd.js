@@ -1,7 +1,7 @@
 // Auto-welcome message when a user joins.
 
 const { makeEmbed } = require('../utils/embed');
-const { E, CHANNELS } = require('../utils/constants');
+const { E, CHANNELS, BANNER } = require('../utils/constants');
 
 module.exports = {
   name: 'guildMemberAdd',
@@ -26,6 +26,7 @@ module.exports = {
         `${E.rocket} We're glad to have you here!`,
       ].join('\n'),
       thumbnail: member.displayAvatarURL({ dynamic: true, size: 256 }),
+      image: BANNER,
     });
 
     channel.send({

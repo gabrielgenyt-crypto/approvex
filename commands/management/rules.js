@@ -1,7 +1,7 @@
 // =rules — Send server rules embed.
 
 const { makeEmbed } = require('../../utils/embed');
-const { E } = require('../../utils/constants');
+const { E, BANNER } = require('../../utils/constants');
 
 module.exports = {
   name: 'rules',
@@ -11,6 +11,7 @@ module.exports = {
 
     const embed = makeEmbed({
       title: `${E.star} Server Rules`,
+      image: BANNER,
     });
 
     embed.setDescription([

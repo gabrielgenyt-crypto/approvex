@@ -1,7 +1,7 @@
 // =help — List all commands (categorized embed).
 
 const { makeEmbed } = require('../../utils/embed');
-const { E } = require('../../utils/constants');
+const { E, BANNER } = require('../../utils/constants');
 const fs = require('fs');
 const path = require('path');
 
@@ -19,6 +19,7 @@ module.exports = {
   async execute(message) {
     const embed = makeEmbed({
       title: `${E.star} ApproveX — Commands`,
+      image: BANNER,
     });
 
     const commandsRoot = path.join(__dirname, '..');
