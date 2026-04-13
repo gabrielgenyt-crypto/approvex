@@ -1,0 +1,21 @@
+{
+  "name": "approvex",
+  "version": "1.0.0",
+  "description": "ApproveX — Discord bot for the Approve Server",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
+    "better-sqlite3": "^11.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
+  }
+}
