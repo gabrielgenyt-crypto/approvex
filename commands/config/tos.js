@@ -1,33 +1,25 @@
-// =mytos — Display your personal TOS.
+// =tos — Display your personal TOS.
 
 const { makeEmbed } = require('../../utils/embed');
 const { getDb } = require('../../utils/db');
-const { E, ROLES } = require('../../utils/constants');
+const { E } = require('../../utils/constants');
+const { isSellerOrHigher } = require('../../utils/helpers');
 
 module.exports = {
-  name: 'mytos',
+  name: 'tos',
   description: 'Show your personal Terms of Service.',
   async execute(message) {
     await message.delete().catch(() => {});
-
-    const allowed = [ROLES.staff, ROLES.seller, ROLES.owner].filter(Boolean);
-    if (!allowed.some(id => message.member.roles.cache.has(id))) {
-      return message.channel.send({
-        embeds: [makeEmbed({ description: `${E.cross} You need a seller or staff role.` })],
-      }).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    }
+    if (!isSellerOrHigher(message.member)) return;
 
     const db = getDb();
-    const row = db.prepare("SELECT value FROM seller_config WHERE user_id = ? AND key = 'tos'")
-      .get(message.author.id);
+    const row = db.prepare("SELECT value FROM seller_config WHERE user_id = ? AND key = 'tos'").get(message.author.id);
 
-    const tosText = row ? row.value : '**No TOS set yet.**';
+    const tosText = row ? row.value : '\u274C **NO TOS YET!**';
 
-    message.channel.send({
-      embeds: [makeEmbed({
-        title: `${E.ticket} Terms of Service`,
-        description: tosText,
-      })],
-    });
+    const embed = makeEmbed({ title: `${E.support} Terms of Service` });
+    embed.addFields({ name: 'Terms of Service', value: tosText, inline: false });
+
+    message.channel.send({ embeds: [embed] });
   },
 };

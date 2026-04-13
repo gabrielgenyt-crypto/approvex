@@ -7,7 +7,7 @@
     "ecmaVersion": "latest"
   },
   "rules": {
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "destructuredArrayIgnorePattern": "^_" }],
     "no-console": "off"
   }
 }

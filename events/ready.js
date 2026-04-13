@@ -1,13 +1,24 @@
-// Fires once when the bot is online.
+// Fires once when the bot is online. Syncs slash commands.
 
-const { ActivityType } = require('discord.js');
-const { BOT_NAME } = require('../utils/constants');
+const { GUILD_ID } = require('../utils/constants');
 
 module.exports = {
   name: 'ready',
   once: true,
-  execute(client) {
-    console.log(`[${BOT_NAME}] Logged in as ${client.user.tag}`);
-    client.user.setActivity('Approve Server', { type: ActivityType.Watching });
+  async execute(_event, client) {
+    console.log(`[ApproveX] Logged in as ${client.user.tag}`);
+
+    // Sync guild slash commands.
+    if (GUILD_ID) {
+      try {
+        const synced = await client.application.commands.set(
+          client.slashCommands || [],
+          GUILD_ID,
+        );
+        console.log(`[ApproveX] Synced ${synced.size} slash commands.`);
+      } catch (e) {
+        console.error('[ApproveX] Slash sync error:', e);
+      }
+    }
   },
 };

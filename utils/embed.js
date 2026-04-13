@@ -1,18 +1,9 @@
-// ApproveX — Embed builder helpers for consistent styling.
+// ApproveX — Embed builder helpers.
 
 const { EmbedBuilder } = require('discord.js');
 const { EMBED_COLOR, E, FOOTER } = require('./constants');
 
-/**
- * Create a pre-styled green-light embed.
- * @param {object} opts
- * @param {string} [opts.title]
- * @param {string} [opts.description]
- * @param {string} [opts.footer]
- * @param {string} [opts.thumbnail]
- * @param {string} [opts.image]
- * @returns {EmbedBuilder}
- */
+/** Create a pre-styled embed. */
 function makeEmbed({ title, description, footer, thumbnail, image } = {}) {
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTimestamp();
   if (title) embed.setTitle(title);
@@ -25,14 +16,14 @@ function makeEmbed({ title, description, footer, thumbnail, image } = {}) {
 
 /** Quick success embed. */
 function successEmbed(description) {
-  return makeEmbed({ description: `${E.tick} ${description}` });
+  return makeEmbed({ description: `${E.success} ${description}` });
 }
 
 /** Quick error embed. */
 function errorEmbed(description) {
   return new EmbedBuilder()
     .setColor(0xed4245)
-    .setDescription(`${E.cross} ${description}`)
+    .setDescription(`${E.deny} ${description}`)
     .setFooter({ text: FOOTER })
     .setTimestamp();
 }

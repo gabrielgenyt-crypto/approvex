@@ -1,59 +1,47 @@
 // ApproveX — Shared constants and configuration.
 
-/** Green-light embed colour used across all embeds. */
-const EMBED_COLOR = 0x57f287;
+/** Embed colour (blue, matching the Python bot's 0x3498db). */
+const EMBED_COLOR = 0x3498db;
 
-/** Custom emoji strings keyed by purpose. */
+/** Custom emoji strings — matching the original Python bot. */
 const E = {
-  dot:      '<:dot:1491081531568160859>',
-  arrow:    '<:arrow:1491083421735194634>',
-  add:      '<:add:1491081507266232483>',
-  tick:     '<:tick:1491083573917253823>',
-  cross:    '<:cross:1491083461920952360>',
-  lock:     '<:lock:1491081435560280266>',
-  share:    '<:share:1491081489050505457>',
-  announce: '<:announce:1491081615001129051>',
-  settings: '<:settings:1491081641286959195>',
-  star:     '<:star:1491081658131153027>',
-  gift:     '<:gift:1491081658131153027>',
-  rocket:   '<:rocket:1491081553651171551>',
-  reload:   '<:reload:1491083421735194634>',
-  ticket:   '<:ticket:1491531888718909450>',
-  money:    '<:money:1491531607633301685>',
-  website:  '<:website:1491531512632443071>',
-  discord:  '<:discord:1491531479757361304>',
-  general:  '<:general:1491532694440513728>',
+  success:  '<:warningg:1478489222657740800>',
+  support:  '<:lightning:1478489166143557836>',
+  exchange: '<:Starr:1480675838557950032>',
+  purchase: '<a:customer:1400509713040408669>',
+  notify:   '<:akey:1480005245894397985>',
+  deny:     '<:warningg:1478489222657740800>',
+  hashtag:  '<:akey:1480005245894397985>',
+  time:     '<:akey:1480005245894397985>',
+  tool:     '<:Tool:1478142607539441871>',
+  paypal:   '<:paypal:1400828106201108581>',
+  logs:     '<:Like:1479991073098043403>',
+  light:    '<:lightning:1478489166143557836>',
+  approve:  '<:approve:1486322316659916890>',
+  arrowe:   '<a:arrowe:1400825490909958268>',
 };
 
 /** Bot prefix. */
 const PREFIX = '=';
 
-/** Bot branding. */
-const BOT_NAME = 'ApproveX';
-const FOOTER = 'ApproveX — Credits to autotem';
+/** Footer text. */
+const FOOTER = 'Approve Support System';
 
-/** Banner image URL used in key embeds. */
-const BANNER = 'https://cdn.discordapp.com/attachments/1493327393736233200/1493354077206216825/tmqzj14.png?ex=69dea9dd&is=69dd585d&hm=2cbefd82d84f21863316b4f207243f6dcbc0da967040cb35aa56e1e95cf0be6f&';
-
-/** Role IDs. */
+/** Role IDs (from .env). */
 const ROLES = {
-  staff:    process.env.STAFF_ROLE_ID    || '1493262996158287882',
-  owner:    process.env.OWNER_ROLE_ID    || '1493261601719976154',
+  staff:    process.env.STAFF_ROLE_ID    || null,
   mod:      process.env.MOD_ROLE_ID      || null,
   seller:   process.env.SELLER_ROLE_ID   || null,
   customer: process.env.CUSTOMER_ROLE_ID || null,
 };
 
-/** Channel IDs (set via .env). */
+/** Channel IDs (from .env). */
 const CHANNELS = {
-  welcome:    process.env.WELCOME_CHANNEL_ID    || null,
   transcript: process.env.TRANSCRIPT_CHANNEL_ID || null,
-  log:        process.env.LOG_CHANNEL_ID        || null,
-  vouch:      process.env.VOUCH_CHANNEL_ID      || null,
 };
 
-/** Category IDs for ticket types (set via .env). */
-const TICKET_CATEGORIES = {
+/** Ticket category IDs (from .env). */
+const TICKET_CATS = {
   purchase: process.env.PURCHASE_CATEGORY_ID || null,
   exchange: process.env.EXCHANGE_CATEGORY_ID || null,
   support:  process.env.SUPPORT_CATEGORY_ID  || null,
@@ -61,10 +49,7 @@ const TICKET_CATEGORIES = {
   vouch:    process.env.VOUCH_CATEGORY_ID    || null,
 };
 
-/** Guild ID for slash commands (set via .env). */
+/** Guild ID for slash commands. */
 const GUILD_ID = process.env.GUILD_ID || null;
 
-module.exports = {
-  EMBED_COLOR, E, PREFIX, BOT_NAME, FOOTER, BANNER,
-  ROLES, CHANNELS, TICKET_CATEGORIES, GUILD_ID,
-};
+module.exports = { EMBED_COLOR, E, PREFIX, FOOTER, ROLES, CHANNELS, TICKET_CATS, GUILD_ID };

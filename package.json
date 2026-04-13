@@ -1,6 +1,6 @@
 {
   "name": "approvex",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "ApproveX — Discord bot for the Approve Server",
   "main": "bot.js",
   "scripts": {

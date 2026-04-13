@@ -1,48 +1,40 @@
-// =help — List all commands (categorized embed).
+// =help — Show the help panel with a 3-page dropdown.
 
+const {
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+} = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
-const { E, BANNER } = require('../../utils/constants');
-const fs = require('fs');
-const path = require('path');
-
-const CATEGORIES = {
-  moderation: { emoji: E.lock, label: 'Moderation' },
-  crypto:     { emoji: E.money, label: 'Sales & Crypto' },
-  management: { emoji: E.settings, label: 'Server Management' },
-  tickets:    { emoji: E.ticket, label: 'Ticket System' },
-  config:     { emoji: E.settings, label: 'Personal Config' },
-  utility:    { emoji: E.general, label: 'Utility' },
-};
+const { E } = require('../../utils/constants');
 
 module.exports = {
   name: 'help',
-  description: 'List all commands.',
+  description: 'Show the help panel.',
   async execute(message) {
     const embed = makeEmbed({
-      title: `${E.star} ApproveX — Commands`,
-      image: BANNER,
+      title: `${E.tool} Approve Help Panel`,
+      description: [
+        'Welcome to the **Approve Help System**',
+        '',
+        'Use the dropdown below to view commands:',
+        '',
+        `${E.tool} Admin Commands`,
+        `${E.support} Moderator Commands`,
+        '',
+        'Only you will see the selected page.',
+      ].join('\n'),
     });
 
-    const commandsRoot = path.join(__dirname, '..');
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId('help_select')
+      .setPlaceholder('Select a help category...')
+      .addOptions([
+        { label: 'Overview', value: 'overview', emoji: '\uD83D\uDCD8', description: 'General bot overview' },
+        { label: 'Admin Commands', value: 'admin', emoji: '\uD83D\uDEE0\uFE0F', description: 'Staff only commands' },
+        { label: 'Moderator Commands', value: 'mod', emoji: '\uD83D\uDEE1\uFE0F', description: 'Moderator commands' },
+      ]);
 
-    for (const [folder, meta] of Object.entries(CATEGORIES)) {
-      const dirPath = path.join(commandsRoot, folder);
-      if (!fs.existsSync(dirPath)) continue;
-
-      const cmds = fs.readdirSync(dirPath)
-        .filter(f => f.endsWith('.js'))
-        .map(f => {
-          const cmd = require(path.join(dirPath, f));
-          return `\`=${cmd.name}\` — ${cmd.description}`;
-        });
-
-      embed.addFields({
-        name: `${meta.emoji} ${meta.label}`,
-        value: cmds.join('\n') || 'None',
-        inline: false,
-      });
-    }
-
-    message.reply({ embeds: [embed] });
+    const row = new ActionRowBuilder().addComponents(menu);
+    message.channel.send({ embeds: [embed], components: [row] });
   },
 };
