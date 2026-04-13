@@ -79,7 +79,20 @@ function _migrate(db) {
       message   TEXT NOT NULL,
       created   DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS seller_config (
+      user_id   TEXT NOT NULL,
+      key       TEXT NOT NULL,
+      value     TEXT NOT NULL,
+      PRIMARY KEY (user_id, key)
+    );
   `);
+
+  // Add ticket_type column if missing (safe to re-run).
+  const ticketCols = db.prepare('PRAGMA table_info(tickets)').all().map(c => c.name);
+  if (!ticketCols.includes('ticket_type')) {
+    db.exec("ALTER TABLE tickets ADD COLUMN ticket_type TEXT DEFAULT 'general'");
+  }
 }
 
 module.exports = { getDb };

@@ -37,16 +37,34 @@ const BANNER = 'https://cdn.discordapp.com/attachments/1493327393736233200/14933
 
 /** Role IDs. */
 const ROLES = {
-  staff: process.env.STAFF_ROLE_ID || '1493262996158287882',
-  owner: process.env.OWNER_ROLE_ID || '1493261601719976154',
+  staff:    process.env.STAFF_ROLE_ID    || '1493262996158287882',
+  owner:    process.env.OWNER_ROLE_ID    || '1493261601719976154',
+  mod:      process.env.MOD_ROLE_ID      || null,
+  seller:   process.env.SELLER_ROLE_ID   || null,
+  customer: process.env.CUSTOMER_ROLE_ID || null,
 };
 
 /** Channel IDs (set via .env). */
 const CHANNELS = {
-  welcome:    process.env.WELCOME_CHANNEL_ID || null,
+  welcome:    process.env.WELCOME_CHANNEL_ID    || null,
   transcript: process.env.TRANSCRIPT_CHANNEL_ID || null,
-  log:        process.env.LOG_CHANNEL_ID || null,
-  vouch:      process.env.VOUCH_CHANNEL_ID || null,
+  log:        process.env.LOG_CHANNEL_ID        || null,
+  vouch:      process.env.VOUCH_CHANNEL_ID      || null,
 };
 
-module.exports = { EMBED_COLOR, E, PREFIX, BOT_NAME, FOOTER, BANNER, ROLES, CHANNELS };
+/** Category IDs for ticket types (set via .env). */
+const TICKET_CATEGORIES = {
+  purchase: process.env.PURCHASE_CATEGORY_ID || null,
+  exchange: process.env.EXCHANGE_CATEGORY_ID || null,
+  support:  process.env.SUPPORT_CATEGORY_ID  || null,
+  closed:   process.env.CLOSED_CATEGORY_ID   || null,
+  vouch:    process.env.VOUCH_CATEGORY_ID    || null,
+};
+
+/** Guild ID for slash commands (set via .env). */
+const GUILD_ID = process.env.GUILD_ID || null;
+
+module.exports = {
+  EMBED_COLOR, E, PREFIX, BOT_NAME, FOOTER, BANNER,
+  ROLES, CHANNELS, TICKET_CATEGORIES, GUILD_ID,
+};
