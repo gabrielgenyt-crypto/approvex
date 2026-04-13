@@ -1,4 +1,4 @@
-// ApproveX — SQLite database helper using better-sqlite3.
+// ApproveX — SQLite database helper.
 
 const Database = require('better-sqlite3');
 const path = require('path');
@@ -22,62 +22,16 @@ function getDb() {
 /** Run initial schema migrations. */
 function _migrate(db) {
   db.exec(`
-    CREATE TABLE IF NOT EXISTS warnings (
-      id        INTEGER PRIMARY KEY AUTOINCREMENT,
-      guild_id  TEXT NOT NULL,
+    CREATE TABLE IF NOT EXISTS seller_config (
       user_id   TEXT NOT NULL,
-      mod_id    TEXT NOT NULL,
-      reason    TEXT NOT NULL,
-      created   DATETIME DEFAULT CURRENT_TIMESTAMP
+      key       TEXT NOT NULL,
+      value     TEXT NOT NULL,
+      PRIMARY KEY (user_id, key)
     );
 
-    CREATE TABLE IF NOT EXISTS tickets (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      guild_id    TEXT NOT NULL,
-      channel_id  TEXT NOT NULL UNIQUE,
-      user_id     TEXT NOT NULL,
-      claimed_by  TEXT,
-      priority    TEXT DEFAULT 'medium',
-      status      TEXT DEFAULT 'open',
-      created     DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS snipes (
-      guild_id    TEXT NOT NULL,
-      channel_id  TEXT NOT NULL,
-      author_tag  TEXT NOT NULL,
-      content     TEXT NOT NULL,
-      created     DATETIME DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (guild_id, channel_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS afk (
-      guild_id  TEXT NOT NULL,
-      user_id   TEXT NOT NULL,
-      reason    TEXT NOT NULL,
-      created   DATETIME DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (guild_id, user_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS sales (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      guild_id    TEXT NOT NULL,
-      seller_id   TEXT NOT NULL,
-      buyer_id    TEXT NOT NULL,
-      amount      REAL NOT NULL,
-      payment     TEXT NOT NULL,
-      description TEXT NOT NULL,
-      trans_id    TEXT,
-      created     DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS vouches (
-      id        INTEGER PRIMARY KEY AUTOINCREMENT,
-      guild_id  TEXT NOT NULL,
-      user_id   TEXT NOT NULL,
-      target_id TEXT NOT NULL,
-      message   TEXT NOT NULL,
-      created   DATETIME DEFAULT CURRENT_TIMESTAMP
+    CREATE TABLE IF NOT EXISTS transcripts (
+      ticket_id TEXT PRIMARY KEY,
+      filepath  TEXT NOT NULL
     );
   `);
 }

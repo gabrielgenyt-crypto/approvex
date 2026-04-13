@@ -1,20 +1,24 @@
-// =ping — Bot latency.
+// =ping — Show bot latency.
 
-const { makeEmbed } = require('../../utils/embed');
-const { E } = require('../../utils/constants');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
   name: 'ping',
   description: 'Show bot latency.',
   async execute(message, _args, client) {
-    const sent = await message.reply({ embeds: [makeEmbed({ description: `${E.reload} Pinging...` })] });
-    const latency = sent.createdTimestamp - message.createdTimestamp;
-    sent.edit({ embeds: [makeEmbed({
-      title: `${E.star} Pong!`,
-      description: [
-        `${E.dot} **Bot Latency:** ${latency}ms`,
-        `${E.arrow} **API Latency:** ${Math.round(client.ws.ping)}ms`,
-      ].join('\n'),
-    })] });
+    const sent = await message.channel.send({ content: '\uD83C\uDFD3 Pinging...' });
+    const response = sent.createdTimestamp - message.createdTimestamp;
+    const api = Math.round(client.ws.ping);
+
+    const embed = new EmbedBuilder()
+      .setTitle('Bot Latency')
+      .setColor(0x2b2d31)
+      .addFields(
+        { name: 'API Latency', value: `${api}ms`, inline: true },
+        { name: 'Response Time', value: `${response}ms`, inline: true },
+      )
+      .setTimestamp();
+
+    sent.edit({ content: null, embeds: [embed] });
   },
 };

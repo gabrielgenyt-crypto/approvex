@@ -1,21 +1,25 @@
-// =ticket rename [name] — Rename ticket channel.
+// =rename [name] — Rename the current ticket channel.
 
-const { successEmbed, errorEmbed } = require('../../utils/embed');
-const { getDb } = require('../../utils/db');
+const { E } = require('../../utils/constants');
+const { isStaffOrMod } = require('../../utils/helpers');
 
 module.exports = {
-  name: 'ticket rename',
-  description: 'Rename the current ticket channel.',
+  name: 'rename',
+  description: 'Rename the current channel.',
   async execute(message, args) {
-    const db = getDb();
-    const ticket = db.prepare("SELECT * FROM tickets WHERE channel_id = ? AND status = 'open'")
-      .get(message.channel.id);
-    if (!ticket) return message.reply({ embeds: [errorEmbed('This is not an open ticket channel.')] });
+    if (!isStaffOrMod(message.member)) return;
 
-    const name = args.join('-');
-    if (!name) return message.reply({ embeds: [errorEmbed('Provide a new name.')] });
+    const name = args.join(' ');
+    if (!name) {
+      return message.channel.send({ content: `${E.deny} Please provide a name.` })
+        .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    }
 
-    await message.channel.setName(`ticket-${name}`);
-    message.reply({ embeds: [successEmbed(`Ticket renamed to **ticket-${name}**.`)] });
+    const cleanName = name.toLowerCase().replace(/\s+/g, '-');
+    await message.channel.edit({ name: cleanName });
+    await message.delete().catch(() => {});
+
+    message.channel.send({ content: `${E.success} Renamed to \`${cleanName}\`` })
+      .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
   },
 };

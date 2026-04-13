@@ -1,25 +1,18 @@
-// =ticket add @user — Add user to ticket.
+// =add @user — Add a user to the current ticket.
 
-const { successEmbed, errorEmbed } = require('../../utils/embed');
-const { getDb } = require('../../utils/db');
+const { E } = require('../../utils/constants');
+const { isStaffOrMod } = require('../../utils/helpers');
 
 module.exports = {
-  name: 'ticket add',
-  description: 'Add a user to the current ticket.',
+  name: 'add',
+  description: 'Add a user to the ticket.',
   async execute(message) {
-    const db = getDb();
-    const ticket = db.prepare("SELECT * FROM tickets WHERE channel_id = ? AND status = 'open'")
-      .get(message.channel.id);
-    if (!ticket) return message.reply({ embeds: [errorEmbed('This is not an open ticket channel.')] });
+    if (!isStaffOrMod(message.member)) return;
 
     const target = message.mentions.members.first();
-    if (!target) return message.reply({ embeds: [errorEmbed('Mention a user to add.')] });
+    if (!target) return;
 
-    await message.channel.permissionOverwrites.edit(target, {
-      ViewChannel: true,
-      SendMessages: true,
-    });
-
-    message.reply({ embeds: [successEmbed(`${target.user.tag} has been added to this ticket.`)] });
+    await message.channel.permissionOverwrites.edit(target, { ViewChannel: true, SendMessages: true });
+    message.channel.send({ content: `${E.success} ${target}` });
   },
 };

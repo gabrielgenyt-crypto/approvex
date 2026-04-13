@@ -12,14 +12,12 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessageReactions,
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+  partials: [Partials.Message, Partials.Channel],
 });
 
 // -- Collections ---------------------------------------------------------------
 client.commands = new Collection();
-client.cooldowns = new Collection();
 
 // -- Load commands -------------------------------------------------------------
 const commandsRoot = path.join(__dirname, 'commands');
