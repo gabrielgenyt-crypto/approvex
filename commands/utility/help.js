@@ -7,9 +7,10 @@ const path = require('path');
 
 const CATEGORIES = {
   moderation: { emoji: E.lock, label: 'Moderation' },
-  crypto:     { emoji: E.money, label: 'Sales & Vouches' },
+  crypto:     { emoji: E.money, label: 'Sales & Crypto' },
   management: { emoji: E.settings, label: 'Server Management' },
   tickets:    { emoji: E.ticket, label: 'Ticket System' },
+  config:     { emoji: E.settings, label: 'Personal Config' },
   utility:    { emoji: E.general, label: 'Utility' },
 };
 
