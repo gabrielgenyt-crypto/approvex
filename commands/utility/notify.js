@@ -1,14 +1,14 @@
 // =notify @user — DM a user with a link to the current channel.
 
 const { E } = require('../../utils/constants');
-const { isStaffOrMod } = require('../../utils/helpers');
+const { isStaff } = require('../../utils/helpers');
 
 module.exports = {
   name: 'notify',
   description: 'DM a user with a link to this channel.',
   async execute(message) {
     await message.delete().catch(() => {});
-    if (!isStaffOrMod(message.member)) return;
+    if (!isStaff(message.member)) return;
 
     const target = message.mentions.members.first();
     if (!target) {

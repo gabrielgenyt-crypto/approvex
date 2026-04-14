@@ -193,7 +193,7 @@ function helpMod() {
   embed.addFields(
     { name: 'Tickets', value: '`=close`\n`=add`\n`=remove`\n`=rename`', inline: false },
     { name: 'Role Tools', value: '`=crole @user`', inline: false },
-    { name: 'Utilities', value: '`=notify`\n`=calc`\n`=convert`\n`=rm`', inline: false },
+    { name: 'Utilities', value: '`=calc`\n`=convert`\n`=rm`', inline: false },
   );
   return embed;
 }
