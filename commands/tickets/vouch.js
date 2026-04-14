@@ -46,9 +46,8 @@ module.exports = {
     // Vouch message.
     channel.send({
       content: [
-        `\u2764\uFE0F  **Please leave a vouch for your purchase & react if we are legit!**`,
-        `${E.arrowe}  \uD83D\uDC9A\u2502vouches ${E.arrowe} \u2705\u2502are-we-legit`,
-        `${E.arrowe} <#1493259438264549386> ${E.arrowe} <#1493260009235021974>`,
+        `\uD83D\uDC4D\uD83C\uDFFC  **Please leave a vouch for your purchase & react if we are legit!**`,
+        `${E.arrowe} <#1493260009235021974> ${E.arrowe} <#1493259438264549386>`,
       ].join('\n'),
     });
   },
