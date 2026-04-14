@@ -10,14 +10,11 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  AttachmentBuilder,
 } = require('discord.js');
 const { makeEmbed, errorEmbed } = require('../utils/embed');
 const { getDb } = require('../utils/db');
-const { E, ROLES, TICKET_CATS, CHANNELS } = require('../utils/constants');
+const { E, ROLES, TICKET_CATS } = require('../utils/constants');
 const { isStaff, isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
-const fs = require('fs');
-const path = require('path');
 
 // ---------------------------------------------------------------------------
 // Ticket helpers
@@ -126,21 +123,6 @@ async function createTicketChannel(interaction, ticketType, fields) {
     embeds: [makeEmbed({ description: `${E.success} Ticket created: ${channel}` })],
     flags: MessageFlags.Ephemeral,
   });
-}
-
-/** Generate a plain-text transcript of a channel. */
-async function generateTranscript(channel) {
-  try {
-    const messages = await channel.messages.fetch({ limit: 100 });
-    const lines = messages
-      .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-      .map(m => `[${m.createdAt.toISOString()}] ${m.author.tag}: ${m.content || '(embed/attachment)'}`)
-      .join('\n');
-    return Buffer.from(lines, 'utf-8');
-  } catch (e) {
-    console.error('Transcript error:', e);
-    return null;
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -482,63 +464,13 @@ module.exports = {
       return interaction.followUp({ content: '\u2705 Ticket reopened.' });
     }
 
-    // Delete ticket button.
+    // Delete ticket button (no transcript — use =delete command for transcripts).
     if (interaction.customId === 'delete_ticket') {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       if (!isStaff(interaction.member)) {
         return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const channel = interaction.channel;
-      if (!channel.topic || !channel.topic.includes('|')) {
-        return interaction.followUp({ content: '\u274C Ticket data missing.', flags: MessageFlags.Ephemeral });
-      }
-      const [creatorId, ticketId] = channel.topic.split('|');
-
-      // Generate transcript.
-      const transcriptBuf = await generateTranscript(channel);
-      if (!transcriptBuf) {
-        return interaction.followUp({ content: `${E.deny} Failed to generate transcript.`, flags: MessageFlags.Ephemeral });
-      }
-
-      const filename = `transcript-${ticketId}.txt`;
-      const transcriptsDir = path.join(__dirname, '..', 'transcripts');
-      fs.mkdirSync(transcriptsDir, { recursive: true });
-      const filepath = path.join(transcriptsDir, filename);
-      fs.writeFileSync(filepath, transcriptBuf);
-
-      // Save to DB.
-      const db = getDb();
-      db.prepare('INSERT OR REPLACE INTO transcripts (ticket_id, filepath) VALUES (?, ?)').run(ticketId, filepath);
-
-      // Send to transcript channel.
-      if (CHANNELS.transcript) {
-        const transcriptChannel = interaction.guild.channels.cache.get(CHANNELS.transcript);
-        if (transcriptChannel) {
-          const embed = makeEmbed({
-            title: `${E.tool} Ticket Transcript`,
-            description: `${E.hashtag} Ticket ID: \`${ticketId}\``,
-          });
-          embed.addFields(
-            { name: 'Ticket Owner', value: `<@${creatorId}>`, inline: true },
-            { name: 'Channel', value: channel.name, inline: true },
-          );
-          const file = new AttachmentBuilder(filepath, { name: filename });
-          await transcriptChannel.send({ embeds: [embed], files: [file] });
-        }
-      }
-
-      // DM the creator.
-      try {
-        const user = await interaction.client.users.fetch(creatorId);
-        const dmEmbed = makeEmbed({
-          title: `${E.tool} Ticket Transcript`,
-          description: `${E.hashtag} Ticket ID: \`${ticketId}\``,
-        });
-        const dmFile = new AttachmentBuilder(filepath, { name: filename });
-        await user.send({ content: '\uD83D\uDCC4 Your ticket has been closed. Here is the transcript.', embeds: [dmEmbed], files: [dmFile] });
-      } catch (e) {
-        console.log('DM failed:', e.message);
-      }
 
       await interaction.followUp({ content: `${E.deny} Deleting ticket...`, flags: MessageFlags.Ephemeral });
       await channel.delete().catch(() => {});

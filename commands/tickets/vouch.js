@@ -47,7 +47,8 @@ module.exports = {
     channel.send({
       content: [
         `\uD83D\uDC4D\uD83C\uDFFC  **Please leave a vouch for your purchase & react if we are legit!**`,
-        `${E.arrowe} <#1493260009235021974> ${E.arrowe} <#1493259438264549386>`,
+        `${E.arrowe} <#1493260009235021974>`,
+        `${E.arrowe} <#1493259438264549386>`,
       ].join('\n'),
     });
   },
