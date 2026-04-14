@@ -2,24 +2,33 @@
 
 const { ROLES } = require('./constants');
 
-/** Check if a member has the staff role. */
+/** Check if a member has the staff (owner) role. */
 function isStaff(member) {
   return ROLES.staff && member.roles.cache.has(ROLES.staff);
 }
 
-/** Check if a member is a "limited mod" (has mod but NOT staff). */
+/** Check if a member has the manager role. */
+function isManager(member) {
+  return ROLES.manager && member.roles.cache.has(ROLES.manager);
+}
+
+/** Check if a member has staff (owner) OR manager role. */
+function isManagerOrHigher(member) {
+  return isStaff(member) || isManager(member);
+}
+
+/** Check if a member is a "limited mod" (has mod but NOT staff/manager). */
 function isLimitedMod(member) {
   const hasMod = ROLES.mod && member.roles.cache.has(ROLES.mod);
-  const hasStaff = isStaff(member);
-  return hasMod && !hasStaff;
+  return hasMod && !isManagerOrHigher(member);
 }
 
-/** Check if a member has staff OR mod role. */
+/** Check if a member has staff, manager, OR mod role. */
 function isStaffOrMod(member) {
-  return isStaff(member) || (ROLES.mod && member.roles.cache.has(ROLES.mod));
+  return isManagerOrHigher(member) || (ROLES.mod && member.roles.cache.has(ROLES.mod));
 }
 
-/** Check if a member has staff, mod, or seller role. */
+/** Check if a member has staff, manager, mod, or seller role. */
 function isSellerOrHigher(member) {
   return isStaffOrMod(member) || (ROLES.seller && member.roles.cache.has(ROLES.seller));
 }
@@ -52,4 +61,4 @@ function safeCalculate(expr) {
   }
 }
 
-module.exports = { isStaff, isLimitedMod, isStaffOrMod, isSellerOrHigher, parseTime, safeCalculate };
+module.exports = { isStaff, isManager, isManagerOrHigher, isLimitedMod, isStaffOrMod, isSellerOrHigher, parseTime, safeCalculate };

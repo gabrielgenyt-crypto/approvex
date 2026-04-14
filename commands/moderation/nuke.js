@@ -1,25 +1,18 @@
 // =nuke [#channel] — Recreate a channel (clone + delete).
 
 const { makeEmbed } = require('../../utils/embed');
-const { E, ROLES } = require('../../utils/constants');
-const { isLimitedMod } = require('../../utils/helpers');
+const { E } = require('../../utils/constants');
+const { isManagerOrHigher } = require('../../utils/helpers');
 
 module.exports = {
   name: 'nuke',
   description: 'Recreate a channel (clone + delete).',
   async execute(message) {
-    if (isLimitedMod(message.member)) {
-      return message.channel.send({ content: `${E.deny} You can not use this function.` })
-        .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    }
-    await message.delete().catch(() => {});
-
-    // Role check.
-    const allowed = [ROLES.staff].filter(Boolean);
-    if (!allowed.some(id => message.member.roles.cache.has(id))) {
+    if (!isManagerOrHigher(message.member)) {
       return message.channel.send({ content: `${E.deny} You need a higher role!` })
         .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
+    await message.delete().catch(() => {});
 
     const target = message.mentions.channels.first() || message.channel;
     const category = target.parent;
