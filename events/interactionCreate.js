@@ -209,6 +209,23 @@ module.exports = {
   TOS_PAGES,
 
   async execute(interaction) {
+    try {
+      await this._handle(interaction);
+    } catch (err) {
+      console.error('[interactionCreate] Unhandled error:', err);
+      // Attempt to inform the user; swallow any secondary errors.
+      try {
+        const msg = { content: 'An unexpected error occurred.', ephemeral: true };
+        if (interaction.deferred || interaction.replied) {
+          await interaction.followUp(msg);
+        } else {
+          await interaction.reply(msg);
+        }
+      } catch { /* nothing we can do */ }
+    }
+  },
+
+  async _handle(interaction) {
 
     // ── Select menus ─────────────────────────────────────────────────────
 
@@ -391,11 +408,11 @@ module.exports = {
     if (interaction.customId === 'close_ticket') {
       await interaction.deferReply();
       if (!isStaffOrMod(interaction.member)) {
-        return interaction.followup.send({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} You need a higher role!`, ephemeral: true });
       }
       const channel = interaction.channel;
       if (TICKET_CATS.closed && channel.parentId === TICKET_CATS.closed) {
-        return interaction.followup.send({ content: `${E.deny} This ticket is already closed.`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} This ticket is already closed.`, ephemeral: true });
       }
 
       // Parse topic for creator.
@@ -425,18 +442,18 @@ module.exports = {
         new ButtonBuilder().setCustomId('delete_ticket').setLabel('Delete').setStyle(ButtonStyle.Danger),
       );
 
-      return interaction.followup.send({ embeds: [embed], components: [reopenRow] });
+      return interaction.followUp({ embeds: [embed], components: [reopenRow] });
     }
 
     // Reopen ticket button.
     if (interaction.customId === 'reopen_ticket') {
       await interaction.deferReply();
       if (!isStaff(interaction.member)) {
-        return interaction.followup.send({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} You need a higher role!`, ephemeral: true });
       }
       const channel = interaction.channel;
       if (!channel.topic || !channel.topic.includes('|')) {
-        return interaction.followup.send({ content: '\u274C Ticket data missing.', ephemeral: true });
+        return interaction.followUp({ content: '\u274C Ticket data missing.', ephemeral: true });
       }
       const [creatorId, _ticketId, originalCategoryId] = channel.topic.split('|');
       const creator = interaction.guild.members.cache.get(creatorId);
@@ -447,25 +464,25 @@ module.exports = {
       if (creator) {
         await channel.permissionOverwrites.edit(creator, { ViewChannel: true, SendMessages: true });
       }
-      return interaction.followup.send({ content: '\u2705 Ticket reopened.' });
+      return interaction.followUp({ content: '\u2705 Ticket reopened.' });
     }
 
     // Delete ticket button.
     if (interaction.customId === 'delete_ticket') {
       await interaction.deferReply({ ephemeral: true });
       if (!isStaff(interaction.member)) {
-        return interaction.followup.send({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} You need a higher role!`, ephemeral: true });
       }
       const channel = interaction.channel;
       if (!channel.topic || !channel.topic.includes('|')) {
-        return interaction.followup.send({ content: '\u274C Ticket data missing.', ephemeral: true });
+        return interaction.followUp({ content: '\u274C Ticket data missing.', ephemeral: true });
       }
       const [creatorId, ticketId] = channel.topic.split('|');
 
       // Generate transcript.
       const transcriptBuf = await generateTranscript(channel);
       if (!transcriptBuf) {
-        return interaction.followup.send({ content: `${E.deny} Failed to generate transcript.`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} Failed to generate transcript.`, ephemeral: true });
       }
 
       const filename = `transcript-${ticketId}.txt`;
@@ -508,7 +525,7 @@ module.exports = {
         console.log('DM failed:', e.message);
       }
 
-      await interaction.followup.send({ content: `${E.deny} Deleting ticket...`, ephemeral: true });
+      await interaction.followUp({ content: `${E.deny} Deleting ticket...`, ephemeral: true });
       await channel.delete().catch(() => {});
     }
   },

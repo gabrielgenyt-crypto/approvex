@@ -48,5 +48,15 @@ for (const file of fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'))) {
   }
 }
 
+// -- Error handling ------------------------------------------------------------
+// Prevent unhandled errors from crashing the process.
+client.on('error', (err) => {
+  console.error('[Client] Error:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process] Unhandled rejection:', reason);
+});
+
 // -- Login ---------------------------------------------------------------------
 client.login(process.env.BOT_TOKEN);
