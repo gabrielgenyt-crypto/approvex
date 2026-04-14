@@ -3,7 +3,7 @@
 const { GUILD_ID } = require('../utils/constants');
 
 module.exports = {
-  name: 'ready',
+  name: 'clientReady',
   once: true,
   async execute(_event, client) {
     console.log(`[ApproveX] Logged in as ${client.user.tag}`);

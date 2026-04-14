@@ -2,6 +2,7 @@
 
 const {
   ChannelType,
+  MessageFlags,
   PermissionFlagsBits,
   ActionRowBuilder,
   ButtonBuilder,
@@ -120,7 +121,7 @@ async function createTicketChannel(interaction, ticketType, fields) {
 
   await interaction.reply({
     embeds: [makeEmbed({ description: `${E.success} Ticket created: ${channel}` })],
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 }
 
@@ -215,7 +216,7 @@ module.exports = {
       console.error('[interactionCreate] Unhandled error:', err);
       // Attempt to inform the user; swallow any secondary errors.
       try {
-        const msg = { content: 'An unexpected error occurred.', ephemeral: true };
+        const msg = { content: 'An unexpected error occurred.', flags: MessageFlags.Ephemeral };
         if (interaction.deferred || interaction.replied) {
           await interaction.followUp(msg);
         } else {
@@ -269,8 +270,8 @@ module.exports = {
       // TOS panel dropdown.
       if (interaction.customId === 'tos_panel_select') {
         const page = TOS_PAGES[interaction.values[0]];
-        if (!page) return interaction.reply({ embeds: [errorEmbed('Unknown category.')], ephemeral: true });
-        return interaction.reply({ embeds: [makeEmbed({ title: page.title, description: page.desc })], ephemeral: true });
+        if (!page) return interaction.reply({ embeds: [errorEmbed('Unknown category.')], flags: MessageFlags.Ephemeral });
+        return interaction.reply({ embeds: [makeEmbed({ title: page.title, description: page.desc })], flags: MessageFlags.Ephemeral });
       }
 
       // Help dropdown.
@@ -281,7 +282,7 @@ module.exports = {
         else if (val === 'admin') embed = helpAdmin();
         else if (val === 'mod') embed = helpMod();
         else return;
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
     }
 
@@ -316,17 +317,17 @@ module.exports = {
       if (interaction.customId === 'modal_set_pp') {
         const db = getDb();
         db.prepare('INSERT OR REPLACE INTO seller_config (user_id, key, value) VALUES (?, ?, ?)').run(interaction.user.id, 'pp', interaction.fields.getTextInputValue('pp_value'));
-        return interaction.reply({ content: `${E.success} PayPal saved for you.`, ephemeral: true });
+        return interaction.reply({ content: `${E.success} PayPal saved for you.`, flags: MessageFlags.Ephemeral });
       }
       if (interaction.customId === 'modal_set_ltc') {
         const db = getDb();
         db.prepare('INSERT OR REPLACE INTO seller_config (user_id, key, value) VALUES (?, ?, ?)').run(interaction.user.id, 'ltc', interaction.fields.getTextInputValue('ltc_value'));
-        return interaction.reply({ content: `${E.success} LTC saved for you.`, ephemeral: true });
+        return interaction.reply({ content: `${E.success} LTC saved for you.`, flags: MessageFlags.Ephemeral });
       }
       if (interaction.customId === 'modal_set_tos') {
         const db = getDb();
         db.prepare('INSERT OR REPLACE INTO seller_config (user_id, key, value) VALUES (?, ?, ?)').run(interaction.user.id, 'tos', interaction.fields.getTextInputValue('tos_value'));
-        return interaction.reply({ content: `${E.success} TOS saved for you.`, ephemeral: true });
+        return interaction.reply({ content: `${E.success} TOS saved for you.`, flags: MessageFlags.Ephemeral });
       }
     }
 
@@ -338,7 +339,7 @@ module.exports = {
     if (interaction.customId === 'copy_value') {
       // The value is stored in the embed field — just send the PayPal from the embed.
       const ppField = interaction.message.embeds[0]?.fields?.find(f => f.name === 'PayPal Email');
-      return interaction.reply({ content: ppField ? ppField.value : 'No value found.', ephemeral: true });
+      return interaction.reply({ content: ppField ? ppField.value : 'No value found.', flags: MessageFlags.Ephemeral });
     }
 
     // Exchange TOS accept/decline.
@@ -359,13 +360,13 @@ module.exports = {
     if (interaction.customId === 'set_pp') {
       const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
-        return interaction.reply({ content: `${E.deny} You are not a staff member.`, ephemeral: true });
+        return interaction.reply({ content: `${E.deny} You are not a staff member.`, flags: MessageFlags.Ephemeral });
       }
       const db = getDb();
       const existing = db.prepare("SELECT value FROM seller_config WHERE user_id = ? AND key = 'pp'").get(interaction.user.id);
       if (existing) {
         db.prepare("DELETE FROM seller_config WHERE user_id = ? AND key = 'pp'").run(interaction.user.id);
-        return interaction.reply({ content: `${E.deny} Your PayPal was removed.`, ephemeral: true });
+        return interaction.reply({ content: `${E.deny} Your PayPal was removed.`, flags: MessageFlags.Ephemeral });
       }
       const modal = new ModalBuilder().setCustomId('modal_set_pp').setTitle('Set PayPal');
       modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pp_value').setLabel('Enter PayPal email').setStyle(TextInputStyle.Short).setRequired(true)));
@@ -375,13 +376,13 @@ module.exports = {
     if (interaction.customId === 'set_ltc') {
       const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
-        return interaction.reply({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.reply({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const db = getDb();
       const existing = db.prepare("SELECT value FROM seller_config WHERE user_id = ? AND key = 'ltc'").get(interaction.user.id);
       if (existing) {
         db.prepare("DELETE FROM seller_config WHERE user_id = ? AND key = 'ltc'").run(interaction.user.id);
-        return interaction.reply({ content: `${E.deny} Your LTC was removed.`, ephemeral: true });
+        return interaction.reply({ content: `${E.deny} Your LTC was removed.`, flags: MessageFlags.Ephemeral });
       }
       const modal = new ModalBuilder().setCustomId('modal_set_ltc').setTitle('Set LTC Address');
       modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ltc_value').setLabel('Enter LTC address').setStyle(TextInputStyle.Short).setRequired(true)));
@@ -391,13 +392,13 @@ module.exports = {
     if (interaction.customId === 'set_tos') {
       const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
-        return interaction.reply({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.reply({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const db = getDb();
       const existing = db.prepare("SELECT value FROM seller_config WHERE user_id = ? AND key = 'tos'").get(interaction.user.id);
       if (existing) {
         db.prepare("DELETE FROM seller_config WHERE user_id = ? AND key = 'tos'").run(interaction.user.id);
-        return interaction.reply({ content: `${E.deny} Your TOS was removed.`, ephemeral: true });
+        return interaction.reply({ content: `${E.deny} Your TOS was removed.`, flags: MessageFlags.Ephemeral });
       }
       const modal = new ModalBuilder().setCustomId('modal_set_tos').setTitle('Set TOS Message');
       modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('tos_value').setLabel('Enter TOS message').setStyle(TextInputStyle.Paragraph).setRequired(true)));
@@ -408,11 +409,11 @@ module.exports = {
     if (interaction.customId === 'close_ticket') {
       await interaction.deferReply();
       if (!isStaffOrMod(interaction.member)) {
-        return interaction.followUp({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const channel = interaction.channel;
       if (TICKET_CATS.closed && channel.parentId === TICKET_CATS.closed) {
-        return interaction.followUp({ content: `${E.deny} This ticket is already closed.`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} This ticket is already closed.`, flags: MessageFlags.Ephemeral });
       }
 
       // Parse topic for creator.
@@ -449,11 +450,11 @@ module.exports = {
     if (interaction.customId === 'reopen_ticket') {
       await interaction.deferReply();
       if (!isStaff(interaction.member)) {
-        return interaction.followUp({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const channel = interaction.channel;
       if (!channel.topic || !channel.topic.includes('|')) {
-        return interaction.followUp({ content: '\u274C Ticket data missing.', ephemeral: true });
+        return interaction.followUp({ content: '\u274C Ticket data missing.', flags: MessageFlags.Ephemeral });
       }
       const [creatorId, _ticketId, originalCategoryId] = channel.topic.split('|');
       const creator = interaction.guild.members.cache.get(creatorId);
@@ -469,20 +470,20 @@ module.exports = {
 
     // Delete ticket button.
     if (interaction.customId === 'delete_ticket') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       if (!isStaff(interaction.member)) {
-        return interaction.followUp({ content: `${E.deny} You need a higher role!`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const channel = interaction.channel;
       if (!channel.topic || !channel.topic.includes('|')) {
-        return interaction.followUp({ content: '\u274C Ticket data missing.', ephemeral: true });
+        return interaction.followUp({ content: '\u274C Ticket data missing.', flags: MessageFlags.Ephemeral });
       }
       const [creatorId, ticketId] = channel.topic.split('|');
 
       // Generate transcript.
       const transcriptBuf = await generateTranscript(channel);
       if (!transcriptBuf) {
-        return interaction.followUp({ content: `${E.deny} Failed to generate transcript.`, ephemeral: true });
+        return interaction.followUp({ content: `${E.deny} Failed to generate transcript.`, flags: MessageFlags.Ephemeral });
       }
 
       const filename = `transcript-${ticketId}.txt`;
@@ -525,7 +526,7 @@ module.exports = {
         console.log('DM failed:', e.message);
       }
 
-      await interaction.followUp({ content: `${E.deny} Deleting ticket...`, ephemeral: true });
+      await interaction.followUp({ content: `${E.deny} Deleting ticket...`, flags: MessageFlags.Ephemeral });
       await channel.delete().catch(() => {});
     }
   },
