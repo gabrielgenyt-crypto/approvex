@@ -15,7 +15,7 @@ const {
 const { makeEmbed, errorEmbed } = require('../utils/embed');
 const { getDb } = require('../utils/db');
 const { E, ROLES, TICKET_CATS, CHANNELS } = require('../utils/constants');
-const { isStaff, isStaffOrMod } = require('../utils/helpers');
+const { isStaff, isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
 
@@ -33,6 +33,9 @@ function ticketOverwrites(guild, userId, botId) {
   }
   if (ROLES.staff) {
     perms.push({ id: ROLES.staff, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] });
+  }
+  if (ROLES.manager) {
+    perms.push({ id: ROLES.manager, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] });
   }
   if (ROLES.mod) {
     perms.push({ id: ROLES.mod, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] });
@@ -167,11 +170,14 @@ function helpOverview() {
       '',
       'Use the dropdown to navigate:',
       '',
-      `${E.tool} **Admin Commands**`,
-      'Full system control (Staff only)',
+      `${E.tool} **Owner Commands**`,
+      'Full system control (Owner only)',
+      '',
+      `${E.notify} **Manager Commands**`,
+      'Management tools (Manager+)',
       '',
       `${E.support} **Moderator Commands**`,
-      'Limited moderation tools',
+      'Moderation tools',
       '',
       'Select a category from the menu below.',
     ].join('\n'),
@@ -179,11 +185,18 @@ function helpOverview() {
 }
 
 function helpAdmin() {
-  const embed = makeEmbed({ title: `${E.tool} Admin Commands`, description: '**Staff-only commands**' });
+  const embed = makeEmbed({ title: `${E.tool} Owner Commands`, description: '**Owner-only commands**' });
   embed.addFields(
-    { name: 'Ticket System', value: '`=panel`\n`=close`\n`=delete`\n`=vouch`', inline: false },
-    { name: 'Management', value: '`=rename`\n`=add`\n`=remove`\n`=notify`', inline: false },
-    { name: 'System', value: '`=nuke`\n`=purge`\n`=ticket <id>`', inline: false },
+    { name: 'Tickets', value: '`=panel`\n`=delete`', inline: false },
+  );
+  return embed;
+}
+
+function helpManager() {
+  const embed = makeEmbed({ title: `${E.notify} Manager Commands`, description: '**Manager & Owner commands**' });
+  embed.addFields(
+    { name: 'Tickets', value: '`=notify`\n`=ticket <id>`', inline: false },
+    { name: 'Moderation', value: '`=nuke`\n`=purge`', inline: false },
   );
   return embed;
 }
@@ -191,9 +204,9 @@ function helpAdmin() {
 function helpMod() {
   const embed = makeEmbed({ title: `${E.support} Moderator Commands`, description: '**Moderator tools**' });
   embed.addFields(
-    { name: 'Tickets', value: '`=close`\n`=add`\n`=remove`\n`=rename`', inline: false },
+    { name: 'Tickets', value: '`=close`\n`=add`\n`=remove`\n`=rename`\n`=vouch`', inline: false },
     { name: 'Role Tools', value: '`=crole @user`', inline: false },
-    { name: 'Utilities', value: '`=notify`\n`=calc`\n`=convert`\n`=rm`', inline: false },
+    { name: 'Utilities', value: '`=calc`\n`=convert`\n`=rm`', inline: false },
   );
   return embed;
 }
@@ -280,6 +293,7 @@ module.exports = {
         let embed;
         if (val === 'overview') embed = helpOverview();
         else if (val === 'admin') embed = helpAdmin();
+        else if (val === 'manager') embed = helpManager();
         else if (val === 'mod') embed = helpMod();
         else return;
         return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
@@ -449,7 +463,7 @@ module.exports = {
     // Reopen ticket button.
     if (interaction.customId === 'reopen_ticket') {
       await interaction.deferReply();
-      if (!isStaff(interaction.member)) {
+      if (!isManagerOrHigher(interaction.member)) {
         return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const channel = interaction.channel;

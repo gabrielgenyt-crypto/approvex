@@ -46,9 +46,9 @@ module.exports = {
     // Vouch message.
     channel.send({
       content: [
-        `${E.light} **Please leave a vouch for your purchase & react if we are legit!**`,
-        `${E.hashtag} https://discord.com/channels/1400506341990334534/1400511226198626506`,
-        `${E.hashtag} https://discord.com/channels/1400506341990334534/1400514428323107072`,
+        `\u2764\uFE0F  **Please leave a vouch for your purchase & react if we are legit!**`,
+        `${E.arrowe}  \uD83D\uDC9A\u2502vouches ${E.arrowe} \u2705\u2502are-we-legit`,
+        `${E.arrowe} <#1493259438264549386> ${E.arrowe} <#1493260009235021974>`,
       ].join('\n'),
     });
   },

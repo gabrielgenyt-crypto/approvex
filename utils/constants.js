@@ -30,6 +30,7 @@ const FOOTER = 'Approve Support System';
 /** Role IDs (from .env). */
 const ROLES = {
   staff:    process.env.STAFF_ROLE_ID    || null,
+  manager:  process.env.MANAGER_ROLE_ID  || null,
   mod:      process.env.MOD_ROLE_ID      || null,
   seller:   process.env.SELLER_ROLE_ID   || null,
   customer: process.env.CUSTOMER_ROLE_ID || null,

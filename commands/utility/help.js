@@ -18,7 +18,8 @@ module.exports = {
         '',
         'Use the dropdown below to view commands:',
         '',
-        `${E.tool} Admin Commands`,
+        `${E.tool} Owner Commands`,
+        `${E.notify} Manager Commands`,
         `${E.support} Moderator Commands`,
         '',
         'Only you will see the selected page.',
@@ -30,7 +31,8 @@ module.exports = {
       .setPlaceholder('Select a help category...')
       .addOptions([
         { label: 'Overview', value: 'overview', emoji: '\uD83D\uDCD8', description: 'General bot overview' },
-        { label: 'Admin Commands', value: 'admin', emoji: '\uD83D\uDEE0\uFE0F', description: 'Staff only commands' },
+        { label: 'Owner Commands', value: 'admin', emoji: '\uD83D\uDEE0\uFE0F', description: 'Owner only commands' },
+        { label: 'Manager Commands', value: 'manager', emoji: '\uD83D\uDD11', description: 'Manager & Owner commands' },
         { label: 'Moderator Commands', value: 'mod', emoji: '\uD83D\uDEE1\uFE0F', description: 'Moderator commands' },
       ]);
 

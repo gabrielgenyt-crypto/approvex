@@ -19,7 +19,6 @@ module.exports = {
     await message.channel.edit({ name: cleanName });
     await message.delete().catch(() => {});
 
-    message.channel.send({ content: `${E.success} Renamed to \`${cleanName}\`` })
-      .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    message.channel.send({ content: `${E.success} Renamed to \`${cleanName}\`` });
   },
 };

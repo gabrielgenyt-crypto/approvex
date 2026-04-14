@@ -4,14 +4,14 @@ const { AttachmentBuilder } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
 const { getDb } = require('../../utils/db');
 const { E } = require('../../utils/constants');
-const { isStaffOrMod } = require('../../utils/helpers');
+const { isManagerOrHigher } = require('../../utils/helpers');
 const fs = require('fs');
 
 module.exports = {
   name: 'ticket',
   description: 'Look up a ticket transcript.',
   async execute(message, args) {
-    if (!isStaffOrMod(message.member)) return;
+    if (!isManagerOrHigher(message.member)) return;
 
     const ticketId = args[0];
     if (!ticketId) {
