@@ -1,5 +1,3 @@
-// =rename [name] — Rename the current ticket channel.
-
 const { E } = require('../../utils/constants');
 const { isStaffOrMod } = require('../../utils/helpers');
 

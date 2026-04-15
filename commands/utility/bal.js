@@ -1,5 +1,3 @@
-// =bal [address] — Check a Litecoin wallet balance.
-
 const { EmbedBuilder } = require('discord.js');
 const { EMBED_COLOR } = require('../../utils/constants');
 

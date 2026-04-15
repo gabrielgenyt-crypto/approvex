@@ -1,5 +1,3 @@
-// =pp — Display your saved PayPal info + TOS.
-
 const {
   ActionRowBuilder,
   ButtonBuilder,

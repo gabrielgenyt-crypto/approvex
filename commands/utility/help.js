@@ -1,5 +1,3 @@
-// =help — Show the help panel with a 3-page dropdown.
-
 const {
   ActionRowBuilder,
   StringSelectMenuBuilder,

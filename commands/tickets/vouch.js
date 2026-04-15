@@ -1,5 +1,3 @@
-// =vouch — Move ticket to vouch category and give customer role.
-
 const { E, TICKET_CATS, ROLES } = require('../../utils/constants');
 const { isStaffOrMod } = require('../../utils/helpers');
 
@@ -20,7 +18,6 @@ module.exports = {
       return channel.send({ content: '\u274C Ticket creator not found.' });
     }
 
-    // Move to vouch category.
     if (!TICKET_CATS.vouch) {
       return channel.send({ content: '\u274C Vouch category not configured.' });
     }
@@ -32,7 +29,6 @@ module.exports = {
     const newName = `vouch-${creator.user.username}`.toLowerCase().replace(/\s+/g, '-');
     await channel.edit({ name: newName, parent: vouchCat.id });
 
-    // Give customer role.
     if (ROLES.customer) {
       const customerRole = message.guild.roles.cache.get(ROLES.customer);
       if (customerRole && !creator.roles.cache.has(ROLES.customer)) {
@@ -43,7 +39,6 @@ module.exports = {
       }
     }
 
-    // Vouch message.
     channel.send({
       content: [
         `\uD83D\uDC4D\uD83C\uDFFC  **Please leave a vouch for your purchase & react if we are legit!**`,

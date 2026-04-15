@@ -1,5 +1,3 @@
-// =ping — Show bot latency.
-
 const { EmbedBuilder } = require('discord.js');
 
 module.exports = {

@@ -1,5 +1,3 @@
-// Handle all button, select-menu, and modal interactions.
-
 const {
   ChannelType,
   MessageFlags,
@@ -15,10 +13,6 @@ const { makeEmbed, errorEmbed } = require('../utils/embed');
 const { getDb } = require('../utils/db');
 const { E, ROLES, TICKET_CATS } = require('../utils/constants');
 const { isStaff, isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
-
-// ---------------------------------------------------------------------------
-// Ticket helpers
-// ---------------------------------------------------------------------------
 
 function ticketOverwrites(guild, userId, botId) {
   const perms = [
@@ -44,7 +38,6 @@ async function createTicketChannel(interaction, ticketType, fields) {
   const guild = interaction.guild;
   const user = interaction.user;
 
-  // Resolve category.
   const categoryId = TICKET_CATS[ticketType];
   const parent = categoryId ? guild.channels.cache.get(categoryId) : null;
 
@@ -55,16 +48,13 @@ async function createTicketChannel(interaction, ticketType, fields) {
     permissionOverwrites: ticketOverwrites(guild, user.id, interaction.client.user?.id),
   });
 
-  // Generate a random ticket ID and store metadata in channel topic.
   const ticketId = Math.floor(1000 + Math.random() * 9000);
   await channel.edit({ topic: `${user.id}|${ticketId}|${categoryId || ''}` });
 
-  // Close button.
   const controlRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('close_ticket').setLabel('Close').setStyle(ButtonStyle.Danger),
   );
 
-  // Ticket embed with form answers.
   const embed = makeEmbed({
     title: 'Ticket Opened',
     description: `${user} opened a **${ticketType}** ticket.`,
@@ -85,7 +75,6 @@ async function createTicketChannel(interaction, ticketType, fields) {
     allowedMentions: { users: [user.id], everyone: true },
   });
 
-  // Exchange tickets get TOS terms.
   if (ticketType === 'exchange') {
     const tosEmbed = makeEmbed({
       title: 'Approve \u2014 Platform Terms & Conditions',
@@ -125,10 +114,7 @@ async function createTicketChannel(interaction, ticketType, fields) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// TOS pages (for =paneltos dropdown)
-// ---------------------------------------------------------------------------
-
+// tos page content for the paneltos dropdown
 const TOS_PAGES = {
   general: { title: '\uD83D\uDCDC Terms of Service', desc: '**By purchasing any product, you agree to the following:**\n\n**No Refunds**\nAll sales are final.\n\n**Payment**\nMust be completed before delivery.\n\n**Delivery**\nDelivery times may vary.\n\n**Replacement**\nOnly if issue is on our side.\n\n**Responsibility**\nWe are not responsible for misuse.\n\n**Revoke Waves**\nNo reimbursement for mass revokes.\n\n**Changes**\nWe may update TOS anytime.' },
   nitro: { title: '\uD83C\uDF81 Nitro TOS', desc: '\u2022 25-day revoke warranty\n\u2022 Must provide full video proof\n\u2022 Show claiming process + gift link\n\u2022 No proof = no replacement\n\u2022 Replacement depends on situation\n\u2022 24h window for claims\n\u2022 Revoke email required' },
@@ -140,10 +126,7 @@ const TOS_PAGES = {
   fortnite: { title: '\uD83D\uDEE0\uFE0F Fortnite TOS', desc: '\u2022 Includes full account + webmail\n\u2022 Email change may be delayed\n\u2022 Depends on Epic security\n\n\u2022 No responsibility after delivery\n\u2022 Buying = agreeing to TOS' },
 };
 
-// ---------------------------------------------------------------------------
-// Help pages (for =help dropdown)
-// ---------------------------------------------------------------------------
-
+// help dropdown pages
 function helpOverview() {
   return makeEmbed({
     title: `${E.tool} Help Overview`,
@@ -193,15 +176,10 @@ function helpMod() {
   return embed;
 }
 
-// ---------------------------------------------------------------------------
-// Main handler
-// ---------------------------------------------------------------------------
-
 module.exports = {
   name: 'interactionCreate',
   once: false,
 
-  // Exported for other modules.
   TOS_PAGES,
 
   async execute(interaction) {
@@ -209,7 +187,6 @@ module.exports = {
       await this._handle(interaction);
     } catch (err) {
       console.error('[interactionCreate] Unhandled error:', err);
-      // Attempt to inform the user; swallow any secondary errors.
       try {
         const msg = { content: 'An unexpected error occurred.', flags: MessageFlags.Ephemeral };
         if (interaction.deferred || interaction.replied) {
@@ -223,11 +200,8 @@ module.exports = {
 
   async _handle(interaction) {
 
-    // ── Select menus ─────────────────────────────────────────────────────
-
     if (interaction.isStringSelectMenu()) {
 
-      // Ticket category dropdown.
       if (interaction.customId === 'ticket_select') {
         const type = interaction.values[0];
 
@@ -262,14 +236,12 @@ module.exports = {
         }
       }
 
-      // TOS panel dropdown.
       if (interaction.customId === 'tos_panel_select') {
         const page = TOS_PAGES[interaction.values[0]];
         if (!page) return interaction.reply({ embeds: [errorEmbed('Unknown category.')], flags: MessageFlags.Ephemeral });
         return interaction.reply({ embeds: [makeEmbed({ title: page.title, description: page.desc })], flags: MessageFlags.Ephemeral });
       }
 
-      // Help dropdown.
       if (interaction.customId === 'help_select') {
         const val = interaction.values[0];
         let embed;
@@ -281,8 +253,6 @@ module.exports = {
         return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
     }
-
-    // ── Modal submissions ────────────────────────────────────────────────
 
     if (interaction.isModalSubmit()) {
       if (interaction.customId === 'modal_purchase') {
@@ -309,7 +279,6 @@ module.exports = {
         ]);
       }
 
-      // Seller config modals.
       if (interaction.customId === 'modal_set_pp') {
         const db = getDb();
         db.prepare('INSERT OR REPLACE INTO seller_config (user_id, key, value) VALUES (?, ?, ?)').run(interaction.user.id, 'pp', interaction.fields.getTextInputValue('pp_value'));
@@ -327,18 +296,13 @@ module.exports = {
       }
     }
 
-    // ── Button interactions ──────────────────────────────────────────────
-
     if (!interaction.isButton()) return;
 
-    // Copy button.
     if (interaction.customId === 'copy_value') {
-      // The value is stored in the embed field — just send the PayPal from the embed.
       const ppField = interaction.message.embeds[0]?.fields?.find(f => f.name === 'PayPal Email');
       return interaction.reply({ content: ppField ? ppField.value : 'No value found.', flags: MessageFlags.Ephemeral });
     }
 
-    // Exchange TOS accept/decline.
     if (interaction.customId === 'exchange_terms_accept' || interaction.customId === 'exchange_terms_decline') {
       const accepted = interaction.customId === 'exchange_terms_accept';
       const disabledRow = new ActionRowBuilder().addComponents(
@@ -352,7 +316,6 @@ module.exports = {
       return interaction.reply({ content: msg });
     }
 
-    // Seller config buttons (PP / LTC / TOS).
     if (interaction.customId === 'set_pp') {
       const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
@@ -401,7 +364,6 @@ module.exports = {
       return interaction.showModal(modal);
     }
 
-    // Close ticket button.
     if (interaction.customId === 'close_ticket') {
       await interaction.deferReply();
       if (!isStaffOrMod(interaction.member)) {
@@ -412,7 +374,6 @@ module.exports = {
         return interaction.followUp({ content: `${E.deny} This ticket is already closed.`, flags: MessageFlags.Ephemeral });
       }
 
-      // Parse topic for creator.
       let creator = null;
       if (channel.topic) {
         try {
@@ -421,7 +382,6 @@ module.exports = {
         } catch { /* ignore */ }
       }
 
-      // Move to closed category.
       if (TICKET_CATS.closed) {
         const closedCat = interaction.guild.channels.cache.get(TICKET_CATS.closed);
         if (closedCat) await channel.edit({ parent: closedCat.id });
@@ -442,7 +402,6 @@ module.exports = {
       return interaction.followUp({ embeds: [embed], components: [reopenRow] });
     }
 
-    // Reopen ticket button.
     if (interaction.customId === 'reopen_ticket') {
       await interaction.deferReply();
       if (!isManagerOrHigher(interaction.member)) {
@@ -464,7 +423,6 @@ module.exports = {
       return interaction.followUp({ content: '\u2705 Ticket reopened.' });
     }
 
-    // Delete ticket button (no transcript — use =delete command for transcripts).
     if (interaction.customId === 'delete_ticket') {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       if (!isStaff(interaction.member)) {

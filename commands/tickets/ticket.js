@@ -1,5 +1,3 @@
-// =ticket [id] — Look up a saved transcript by ticket ID.
-
 const { AttachmentBuilder } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
 const { getDb } = require('../../utils/db');

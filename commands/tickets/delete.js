@@ -1,5 +1,3 @@
-// =delete — Delete ticket with transcript (staff only, not limited mods).
-
 const { AttachmentBuilder } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
 const { getDb } = require('../../utils/db');
@@ -24,7 +22,6 @@ module.exports = {
 
     const [creatorId, ticketId] = channel.topic.split('|');
 
-    // Generate transcript.
     let lines;
     try {
       const messages = await channel.messages.fetch({ limit: 100 });
@@ -43,7 +40,6 @@ module.exports = {
     const filepath = path.join(transcriptsDir, filename);
     fs.writeFileSync(filepath, lines, 'utf-8');
 
-    // Save to DB.
     const db = getDb();
     db.prepare('INSERT OR REPLACE INTO transcripts (ticket_id, filepath) VALUES (?, ?)').run(ticketId, filepath);
 
@@ -56,7 +52,6 @@ module.exports = {
       { name: 'Channel', value: channel.name, inline: true },
     );
 
-    // Send to transcript channel.
     if (CHANNELS.transcript) {
       const transcriptChannel = message.guild.channels.cache.get(CHANNELS.transcript);
       if (transcriptChannel) {
@@ -65,7 +60,6 @@ module.exports = {
       }
     }
 
-    // DM the creator.
     try {
       const user = await message.client.users.fetch(creatorId);
       const dmFile = new AttachmentBuilder(filepath, { name: filename });

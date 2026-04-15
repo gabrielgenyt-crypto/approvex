@@ -1,5 +1,3 @@
-// =remove @user — Remove a user from the current ticket.
-
 const { isStaffOrMod } = require('../../utils/helpers');
 
 module.exports = {

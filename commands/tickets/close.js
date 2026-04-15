@@ -1,5 +1,3 @@
-// =close — Close the current ticket (move to closed category).
-
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
 const { E, TICKET_CATS } = require('../../utils/constants');

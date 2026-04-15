@@ -1,5 +1,3 @@
-// =txid [coin] [txid] — Post a blockchain transaction link.
-
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -14,7 +12,6 @@ module.exports = {
   async execute(message, args) {
     await message.delete().catch(() => {});
 
-    // Role check.
     const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
     if (!allowed.some(id => message.member.roles.cache.has(id))) {
       return message.channel.send({ content: `${E.deny} You need a higher role!` })

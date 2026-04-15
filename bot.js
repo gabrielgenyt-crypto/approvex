@@ -1,5 +1,3 @@
-// ApproveX — Main bot entry point.
-
 require('dotenv').config();
 
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
@@ -16,10 +14,9 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel],
 });
 
-// -- Collections ---------------------------------------------------------------
 client.commands = new Collection();
 
-// -- Load commands -------------------------------------------------------------
+// load commands from each subfolder
 const commandsRoot = path.join(__dirname, 'commands');
 for (const category of fs.readdirSync(commandsRoot)) {
   const categoryPath = path.join(commandsRoot, category);
@@ -37,7 +34,7 @@ for (const category of fs.readdirSync(commandsRoot)) {
   }
 }
 
-// -- Load events ---------------------------------------------------------------
+// load event handlers
 const eventsPath = path.join(__dirname, 'events');
 for (const file of fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'))) {
   const event = require(path.join(eventsPath, file));
@@ -48,8 +45,7 @@ for (const file of fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'))) {
   }
 }
 
-// -- Error handling ------------------------------------------------------------
-// Prevent unhandled errors from crashing the process.
+// keep the process alive if something breaks
 client.on('error', (err) => {
   console.error('[Client] Error:', err);
 });
@@ -58,5 +54,4 @@ process.on('unhandledRejection', (reason) => {
   console.error('[Process] Unhandled rejection:', reason);
 });
 
-// -- Login ---------------------------------------------------------------------
 client.login(process.env.BOT_TOKEN);

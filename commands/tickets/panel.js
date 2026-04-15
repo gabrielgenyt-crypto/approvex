@@ -1,5 +1,3 @@
-// =panel — Send the ticket panel with Purchase / Exchange / Support dropdown.
-
 const {
   ActionRowBuilder,
   StringSelectMenuBuilder,

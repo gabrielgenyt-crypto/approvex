@@ -1,5 +1,3 @@
-// =add @user — Add a user to the current ticket.
-
 const { E } = require('../../utils/constants');
 const { isStaffOrMod } = require('../../utils/helpers');
 

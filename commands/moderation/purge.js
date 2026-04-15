@@ -1,5 +1,3 @@
-// =purge [amount] — Purge messages from the channel.
-
 const { E } = require('../../utils/constants');
 const { isManagerOrHigher } = require('../../utils/helpers');
 

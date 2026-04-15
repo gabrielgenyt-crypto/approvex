@@ -1,5 +1,3 @@
-// Prefix command router.
-
 const { errorEmbed } = require('../utils/embed');
 const { PREFIX } = require('../utils/constants');
 

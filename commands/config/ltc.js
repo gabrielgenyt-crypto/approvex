@@ -1,5 +1,3 @@
-// =ltc — Display your saved LTC address.
-
 const { getDb } = require('../../utils/db');
 const { E } = require('../../utils/constants');
 const { isSellerOrHigher } = require('../../utils/helpers');

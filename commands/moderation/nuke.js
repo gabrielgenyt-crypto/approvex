@@ -1,5 +1,3 @@
-// =nuke [#channel] — Recreate a channel (clone + delete).
-
 const { makeEmbed } = require('../../utils/embed');
 const { E } = require('../../utils/constants');
 const { isManagerOrHigher } = require('../../utils/helpers');

@@ -1,5 +1,3 @@
-// =calc [expression] — Evaluate a math expression.
-
 const { makeEmbed } = require('../../utils/embed');
 const { E } = require('../../utils/constants');
 const { safeCalculate } = require('../../utils/helpers');

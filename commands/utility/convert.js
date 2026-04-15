@@ -1,5 +1,3 @@
-// =convert [from] [to] [amount] — Convert between EUR and USD.
-
 const { makeEmbed } = require('../../utils/embed');
 const { E } = require('../../utils/constants');
 

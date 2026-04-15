@@ -1,5 +1,3 @@
-// =rm [time] — Set a reminder (e.g. =rm 5m, =rm 10s, =rm 2h, =rm 1d).
-
 const { makeEmbed } = require('../../utils/embed');
 const { E } = require('../../utils/constants');
 const { parseTime } = require('../../utils/helpers');

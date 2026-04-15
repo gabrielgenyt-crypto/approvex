@@ -1,5 +1,3 @@
-// Fires once when the bot is online. Syncs slash commands.
-
 const { GUILD_ID } = require('../utils/constants');
 
 module.exports = {

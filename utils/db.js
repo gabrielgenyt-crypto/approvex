@@ -1,5 +1,3 @@
-// ApproveX — SQLite database helper.
-
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
@@ -8,7 +6,6 @@ const DB_PATH = path.join(__dirname, '..', 'data', 'approvex.db');
 
 let _db;
 
-/** Return (and lazily create) the singleton database connection. */
 function getDb() {
   if (!_db) {
     fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
@@ -19,7 +16,6 @@ function getDb() {
   return _db;
 }
 
-/** Run initial schema migrations. */
 function _migrate(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS seller_config (

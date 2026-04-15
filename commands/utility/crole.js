@@ -1,5 +1,3 @@
-// =crole @user — Give the customer/client role (mod only, not staff).
-
 const { E, ROLES } = require('../../utils/constants');
 
 module.exports = {
@@ -8,7 +6,6 @@ module.exports = {
   async execute(message) {
     await message.delete().catch(() => {});
 
-    // Only mod (not staff).
     if (!ROLES.mod || !message.member.roles.cache.has(ROLES.mod)) {
       return message.channel.send({ content: `${E.deny} You need moderator role!` })
         .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));

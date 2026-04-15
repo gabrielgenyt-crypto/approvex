@@ -1,5 +1,3 @@
-// =tos — Display your personal TOS.
-
 const { makeEmbed } = require('../../utils/embed');
 const { getDb } = require('../../utils/db');
 const { E } = require('../../utils/constants');

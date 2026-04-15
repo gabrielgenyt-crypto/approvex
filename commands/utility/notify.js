@@ -1,5 +1,3 @@
-// =notify @user — DM a user with a link to the current channel.
-
 const { E } = require('../../utils/constants');
 const { isManagerOrHigher } = require('../../utils/helpers');
 

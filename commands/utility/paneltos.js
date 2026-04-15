@@ -1,5 +1,3 @@
-// =paneltos — Send the TOS panel with a dropdown for each product category.
-
 const {
   ActionRowBuilder,
   StringSelectMenuBuilder,

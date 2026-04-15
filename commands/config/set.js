@@ -1,5 +1,3 @@
-// =set — Open the personal config panel (PP / LTC / TOS buttons).
-
 const {
   ActionRowBuilder,
   ButtonBuilder,

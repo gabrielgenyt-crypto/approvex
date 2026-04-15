@@ -1,9 +1,6 @@
-// ApproveX — Shared constants and configuration.
-
-/** Embed colour (blue, matching the Python bot's 0x3498db). */
 const EMBED_COLOR = 0x3498db;
 
-/** Custom emoji strings — matching the original Python bot. */
+// emojis used across embeds
 const E = {
   success:  '<:warningg:1478489222657740800>',
   support:  '<:lightning:1478489166143557836>',
@@ -21,13 +18,9 @@ const E = {
   arrowe:   '<a:arrowe:1400825490909958268>',
 };
 
-/** Bot prefix. */
 const PREFIX = '=';
-
-/** Footer text. */
 const FOOTER = 'Approve Support System';
 
-/** Role IDs (from .env). */
 const ROLES = {
   staff:    process.env.STAFF_ROLE_ID    || null,
   manager:  process.env.MANAGER_ROLE_ID  || null,
@@ -36,12 +29,10 @@ const ROLES = {
   customer: process.env.CUSTOMER_ROLE_ID || null,
 };
 
-/** Channel IDs (from .env). */
 const CHANNELS = {
   transcript: process.env.TRANSCRIPT_CHANNEL_ID || null,
 };
 
-/** Ticket category IDs (from .env). */
 const TICKET_CATS = {
   purchase: process.env.PURCHASE_CATEGORY_ID || null,
   exchange: process.env.EXCHANGE_CATEGORY_ID || null,
@@ -50,7 +41,6 @@ const TICKET_CATS = {
   vouch:    process.env.VOUCH_CATEGORY_ID    || null,
 };
 
-/** Guild ID for slash commands. */
 const GUILD_ID = process.env.GUILD_ID || null;
 
 module.exports = { EMBED_COLOR, E, PREFIX, FOOTER, ROLES, CHANNELS, TICKET_CATS, GUILD_ID };
