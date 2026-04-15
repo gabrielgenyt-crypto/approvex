@@ -8,11 +8,15 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  AttachmentBuilder,
 } = require('discord.js');
 const { makeEmbed, errorEmbed } = require('../utils/embed');
 const { getDb } = require('../utils/db');
-const { E, ROLES, TICKET_CATS } = require('../utils/constants');
+const { buildTranscriptHtml } = require('../utils/transcript');
+const { E, ROLES, CHANNELS, TICKET_CATS } = require('../utils/constants');
 const { isStaff, isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
+const fs = require('fs');
+const path = require('path');
 
 function ticketOverwrites(guild, userId, botId) {
   const perms = [
@@ -436,6 +440,60 @@ module.exports = {
         return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
       const channel = interaction.channel;
+
+      // generate transcript before deleting
+      if (channel.topic && channel.topic.includes('|')) {
+        const [creatorId, ticketId] = channel.topic.split('|');
+
+        let msgs;
+        try {
+          msgs = await channel.messages.fetch({ limit: 100 });
+        } catch { /* ignore */ }
+
+        if (msgs && msgs.size > 0) {
+          const html = buildTranscriptHtml(msgs, {
+            channelName: channel.name,
+            ticketId: ticketId || 'unknown',
+            guildName: interaction.guild.name,
+          });
+
+          const filename = `transcript-${ticketId}.html`;
+          const transcriptsDir = path.join(__dirname, '..', 'transcripts');
+          fs.mkdirSync(transcriptsDir, { recursive: true });
+          const filepath = path.join(transcriptsDir, filename);
+          fs.writeFileSync(filepath, html, 'utf-8');
+
+          const db = getDb();
+          db.prepare('INSERT OR REPLACE INTO transcripts (ticket_id, filepath) VALUES (?, ?)').run(ticketId, filepath);
+
+          const embed = makeEmbed({
+            title: `${E.tool} Ticket Transcript`,
+            description: `${E.hashtag} Ticket ID: \`${ticketId}\``,
+          });
+          embed.addFields(
+            { name: 'Ticket Owner', value: `<@${creatorId}>`, inline: true },
+            { name: 'Channel', value: channel.name, inline: true },
+          );
+
+          if (CHANNELS.transcript) {
+            const transcriptChannel = interaction.guild.channels.cache.get(CHANNELS.transcript);
+            if (transcriptChannel) {
+              const file = new AttachmentBuilder(filepath, { name: filename });
+              await transcriptChannel.send({ embeds: [embed], files: [file] });
+            }
+          }
+
+          try {
+            const user = await interaction.client.users.fetch(creatorId);
+            const dmFile = new AttachmentBuilder(filepath, { name: filename });
+            await user.send({
+              content: '\uD83D\uDCC4 Your ticket has been closed. Here is the transcript.',
+              embeds: [embed],
+              files: [dmFile],
+            });
+          } catch { /* dm might be closed */ }
+        }
+      }
 
       await interaction.followUp({ content: `${E.deny} Deleting ticket...`, flags: MessageFlags.Ephemeral });
       await channel.delete().catch(() => {});
