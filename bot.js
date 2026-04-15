@@ -15,6 +15,7 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+client.slashCommands = [];
 
 // load commands from each subfolder
 const commandsRoot = path.join(__dirname, 'commands');
@@ -23,6 +24,13 @@ for (const category of fs.readdirSync(commandsRoot)) {
   if (!fs.statSync(categoryPath).isDirectory()) continue;
   for (const file of fs.readdirSync(categoryPath).filter(f => f.endsWith('.js'))) {
     const cmd = require(path.join(categoryPath, file));
+
+    // slash commands have a .data builder and .slash flag
+    if (cmd.slash && cmd.data) {
+      client.slashCommands.push(cmd);
+      continue;
+    }
+
     if (cmd.name) {
       client.commands.set(cmd.name, cmd);
       if (cmd.aliases) {

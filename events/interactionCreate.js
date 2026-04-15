@@ -20,7 +20,7 @@ function ticketOverwrites(guild, userId, botId) {
     { id: userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
   ];
   if (botId) {
-    perms.push({ id: botId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageMessages] });
+    perms.push({ id: botId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.MentionEveryone] });
   }
   if (ROLES.staff) {
     perms.push({ id: ROLES.staff, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] });
@@ -72,7 +72,7 @@ async function createTicketChannel(interaction, ticketType, fields) {
     content: `@everyone ${user}`,
     embeds: [embed],
     components: [controlRow],
-    allowedMentions: { users: [user.id], everyone: true },
+    allowedMentions: { parse: ['everyone'], users: [user.id] },
   });
 
   if (ticketType === 'exchange') {
@@ -199,6 +199,13 @@ module.exports = {
   },
 
   async _handle(interaction) {
+
+    // slash commands
+    if (interaction.isChatInputCommand()) {
+      const cmd = interaction.client.slashCommands.find(c => c.data.name === interaction.commandName);
+      if (cmd) return cmd.execute(interaction);
+      return;
+    }
 
     if (interaction.isStringSelectMenu()) {
 

@@ -6,13 +6,10 @@ module.exports = {
   async execute(_event, client) {
     console.log(`[ApproveX] Logged in as ${client.user.tag}`);
 
-    // Sync guild slash commands.
     if (GUILD_ID) {
       try {
-        const synced = await client.application.commands.set(
-          client.slashCommands || [],
-          GUILD_ID,
-        );
+        const slashData = client.slashCommands.map(cmd => cmd.data.toJSON());
+        const synced = await client.application.commands.set(slashData, GUILD_ID);
         console.log(`[ApproveX] Synced ${synced.size} slash commands.`);
       } catch (e) {
         console.error('[ApproveX] Slash sync error:', e);

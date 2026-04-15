@@ -1,6 +1,7 @@
 const { AttachmentBuilder } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
 const { getDb } = require('../../utils/db');
+const { buildTranscriptHtml } = require('../../utils/transcript');
 const { E, CHANNELS } = require('../../utils/constants');
 const { isStaff, isLimitedMod } = require('../../utils/helpers');
 const fs = require('fs');
@@ -22,23 +23,25 @@ module.exports = {
 
     const [creatorId, ticketId] = channel.topic.split('|');
 
-    let lines;
+    let msgs;
     try {
-      const messages = await channel.messages.fetch({ limit: 100 });
-      lines = messages
-        .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-        .map(m => `[${m.createdAt.toISOString()}] ${m.author.tag}: ${m.content || '(embed/attachment)'}`)
-        .join('\n');
+      msgs = await channel.messages.fetch({ limit: 100 });
     } catch (e) {
       console.error('Transcript error:', e);
       return channel.send({ content: `${E.deny} Failed to generate transcript.` });
     }
 
-    const filename = `transcript-${ticketId}.txt`;
+    const html = buildTranscriptHtml(msgs, {
+      channelName: channel.name,
+      ticketId,
+      guildName: message.guild.name,
+    });
+
+    const filename = `transcript-${ticketId}.html`;
     const transcriptsDir = path.join(__dirname, '..', '..', 'transcripts');
     fs.mkdirSync(transcriptsDir, { recursive: true });
     const filepath = path.join(transcriptsDir, filename);
-    fs.writeFileSync(filepath, lines, 'utf-8');
+    fs.writeFileSync(filepath, html, 'utf-8');
 
     const db = getDb();
     db.prepare('INSERT OR REPLACE INTO transcripts (ticket_id, filepath) VALUES (?, ?)').run(ticketId, filepath);

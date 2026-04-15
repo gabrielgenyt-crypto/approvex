@@ -4,6 +4,7 @@ const { getDb } = require('../../utils/db');
 const { E } = require('../../utils/constants');
 const { isManagerOrHigher } = require('../../utils/helpers');
 const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   name: 'ticket',
@@ -31,7 +32,8 @@ module.exports = {
       description: `${E.hashtag} Ticket ID: \`${ticketId}\``,
     });
 
-    const file = new AttachmentBuilder(row.filepath, { name: `transcript-${ticketId}.txt` });
+    const ext = path.extname(row.filepath) || '.html';
+    const file = new AttachmentBuilder(row.filepath, { name: `transcript-${ticketId}${ext}` });
     message.channel.send({ embeds: [embed], files: [file] });
   },
 };
