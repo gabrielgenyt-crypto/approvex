@@ -7,9 +7,10 @@ module.exports = {
   description: 'Delete every message in the channel.',
   async execute(message) {
     if (!isManagerOrHigher(message.member)) {
-      return message.channel.send({ content: `${E.deny} You need a higher role!` })
+      return message.channel.send({ content: `${E.deny} Only managers and owners can use this.` })
         .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
+    console.log(`[nuke] Used by ${message.author.tag} (${message.author.id}) in #${message.channel.name}`);
     await message.delete().catch(() => {});
 
     const channel = message.channel;
