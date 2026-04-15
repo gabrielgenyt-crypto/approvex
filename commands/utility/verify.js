@@ -12,13 +12,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setColor(0x57f287)
-      .setDescription([
-        'Please verify using the button below.\u{1F447}',
-        '',
-        '* We are trusted and can guarantee by verifying you are safe',
-        '* We do this verification to ensure we can bring you back if our server gets deleted',
-        '* We have over 6000+ vouches so you are in safe hands',
-      ].join('\n'));
+      .setDescription('Please **verify** using the button below.\u{1F447}\n\u2022 We are trusted and can guarantee by verifying you are safe\n\u2022 We do this verification to ensure we can bring you back if our server gets deleted\n\u2022 We have over 6000+ vouches so you are in safe hands');
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
