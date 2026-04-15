@@ -3,7 +3,7 @@ const { makeEmbed } = require('../../utils/embed');
 const { getDb } = require('../../utils/db');
 const { buildTranscriptHtml } = require('../../utils/transcript');
 const { E, CHANNELS } = require('../../utils/constants');
-const { isStaff, isLimitedMod } = require('../../utils/helpers');
+const { isManagerOrHigher } = require('../../utils/helpers');
 const fs = require('fs');
 const path = require('path');
 
@@ -11,9 +11,8 @@ module.exports = {
   name: 'delete',
   description: 'Delete ticket and save transcript.',
   async execute(message) {
-    if (!isStaff(message.member)) return;
-    if (isLimitedMod(message.member)) {
-      return message.channel.send({ content: `${E.deny} You can not use this function.` });
+    if (!isManagerOrHigher(message.member)) {
+      return message.channel.send({ content: `${E.deny} Only managers and owners can delete tickets.` });
     }
 
     const channel = message.channel;

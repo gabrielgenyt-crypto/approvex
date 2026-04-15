@@ -14,7 +14,7 @@ const { makeEmbed, errorEmbed } = require('../utils/embed');
 const { getDb } = require('../utils/db');
 const { buildTranscriptHtml } = require('../utils/transcript');
 const { E, ROLES, CHANNELS, TICKET_CATS } = require('../utils/constants');
-const { isStaff, isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
+const { isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
 
@@ -436,8 +436,8 @@ module.exports = {
 
     if (interaction.customId === 'delete_ticket') {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-      if (!isStaff(interaction.member)) {
-        return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
+      if (!isManagerOrHigher(interaction.member)) {
+        return interaction.followUp({ content: `${E.deny} Only managers and owners can delete tickets.`, flags: MessageFlags.Ephemeral });
       }
       const channel = interaction.channel;
 
