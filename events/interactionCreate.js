@@ -112,6 +112,18 @@ async function createTicketChannel(interaction, ticketType, fields) {
     await channel.send({ embeds: [tosEmbed], components: [tosRow] });
   }
 
+  // log to the ticket log channel
+  if (CHANNELS.log) {
+    const logChannel = guild.channels.cache.get(CHANNELS.log);
+    if (logChannel) {
+      const logEmbed = makeEmbed({
+        title: 'Ticket Opened',
+        description: `${E.logs} **${ticketType}** ticket opened by ${user}\n${E.hashtag} Ticket ID: \`${ticketId}\`\n${E.tool} Channel: ${channel}`,
+      });
+      logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+    }
+  }
+
   await interaction.reply({
     embeds: [makeEmbed({ description: `${E.success} Ticket created: ${channel}` })],
     flags: MessageFlags.Ephemeral,

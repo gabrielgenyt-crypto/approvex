@@ -31,6 +31,7 @@ const ROLES = {
 
 const CHANNELS = {
   transcript: process.env.TRANSCRIPT_CHANNEL_ID || null,
+  log: process.env.LOG_CHANNEL_ID || null,
 };
 
 const TICKET_CATS = {
