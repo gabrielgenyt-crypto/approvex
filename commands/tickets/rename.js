@@ -15,6 +15,8 @@ module.exports = {
 
     const cleanName = name.toLowerCase().replace(/\s+/g, '-');
     await message.delete().catch(() => {});
-    await message.channel.edit({ name: cleanName });
+    // Preserve the channel topic so ticket data (userId|ticketId|categoryId) is not lost.
+    // Other commands like =vouch and =close depend on it.
+    await message.channel.edit({ name: cleanName, topic: message.channel.topic || undefined });
   },
 };
