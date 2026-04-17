@@ -27,7 +27,7 @@ module.exports = {
         `${E.notify} **How It Works**`,
         'Select the appropriate category from the dropdown menu below.',
         'Our team will respond as soon as possible.',
-        `${E.deny} Please read <#1412824062434218126> before buying`,
+        `${E.deny} Please read <#1494001878709567619> before buying`,
         '',
         `${E.purchase} **Purchase**`,
         '-# \u2022 Purchase a product',

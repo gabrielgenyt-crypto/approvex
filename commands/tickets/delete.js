@@ -58,7 +58,7 @@ module.exports = {
       const transcriptChannel = message.guild.channels.cache.get(CHANNELS.transcript);
       if (transcriptChannel) {
         const file = new AttachmentBuilder(filepath, { name: filename });
-        await transcriptChannel.send({ embeds: [embed], files: [file] });
+        await transcriptChannel.send({ content: `Ticket Owner ID: ${creatorId}`, embeds: [embed], files: [file] });
       }
     }
 

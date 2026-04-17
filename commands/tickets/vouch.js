@@ -13,8 +13,10 @@ module.exports = {
     }
 
     const [creatorId] = channel.topic.split('|');
-    const creator = message.guild.members.cache.get(creatorId);
-    if (!creator) {
+    let creator;
+    try {
+      creator = await message.guild.members.fetch(creatorId);
+    } catch {
       return channel.send({ content: '\u274C Ticket creator not found.' });
     }
 

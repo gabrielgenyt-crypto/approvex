@@ -125,7 +125,7 @@ async function createTicketChannel(interaction, ticketType, fields) {
   }
 
   await interaction.reply({
-    embeds: [makeEmbed({ description: `${E.success} Ticket created: <#1494001878709567619>` })],
+    embeds: [makeEmbed({ description: `${E.success} Ticket created: ${channel}` })],
     flags: MessageFlags.Ephemeral,
   });
 }
