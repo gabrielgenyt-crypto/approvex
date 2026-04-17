@@ -125,7 +125,7 @@ async function createTicketChannel(interaction, ticketType, fields) {
   }
 
   await interaction.reply({
-    embeds: [makeEmbed({ description: `${E.success} Ticket created: ${channel}` })],
+    embeds: [makeEmbed({ description: `${E.success} Ticket created: <#1494001878709567619>` })],
     flags: MessageFlags.Ephemeral,
   });
 }
@@ -340,7 +340,7 @@ module.exports = {
     }
 
     if (interaction.customId === 'set_pp') {
-      const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
+      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
         return interaction.reply({ content: `${E.deny} You are not a staff member.`, flags: MessageFlags.Ephemeral });
       }
@@ -356,7 +356,7 @@ module.exports = {
     }
 
     if (interaction.customId === 'set_ltc') {
-      const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
+      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
         return interaction.reply({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
@@ -372,7 +372,7 @@ module.exports = {
     }
 
     if (interaction.customId === 'set_tos') {
-      const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
+      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
         return interaction.reply({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
@@ -491,7 +491,7 @@ module.exports = {
             const transcriptChannel = interaction.guild.channels.cache.get(CHANNELS.transcript);
             if (transcriptChannel) {
               const file = new AttachmentBuilder(filepath, { name: filename });
-              await transcriptChannel.send({ embeds: [embed], files: [file] });
+              await transcriptChannel.send({ content: `Ticket Owner ID: ${creatorId}`, embeds: [embed], files: [file] });
             }
           }
 

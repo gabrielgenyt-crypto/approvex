@@ -14,9 +14,7 @@ module.exports = {
     }
 
     const cleanName = name.toLowerCase().replace(/\s+/g, '-');
-    await message.channel.edit({ name: cleanName });
     await message.delete().catch(() => {});
-
-    message.channel.send({ content: `${E.success} Renamed to \`${cleanName}\`` });
+    await message.channel.edit({ name: cleanName });
   },
 };
