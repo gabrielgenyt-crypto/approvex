@@ -1,12 +1,8 @@
 const {
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  ButtonBuilder,
-  ButtonStyle,
 } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
-
-const VERIFY_URL = 'https://discord.com/oauth2/authorize?client_id=1495406522375602326&redirect_uri=https://restorecord.com/api/callback&response_type=code&scope=identify+guilds.join&state=1493233742007894168&prompt=none';
 
 module.exports = {
   name: 'paneltos',
@@ -46,13 +42,6 @@ module.exports = {
 
     const selectRow = new ActionRowBuilder().addComponents(menu);
 
-    const verifyRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setLabel('Verify')
-        .setStyle(ButtonStyle.Link)
-        .setURL(VERIFY_URL),
-    );
-
-    message.channel.send({ embeds: [embed], components: [selectRow, verifyRow] });
+    message.channel.send({ embeds: [embed], components: [selectRow] });
   },
 };
