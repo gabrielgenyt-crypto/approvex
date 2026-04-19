@@ -6,6 +6,7 @@ const { makeEmbed } = require('../../utils/embed');
 
 module.exports = {
   name: 'paneltos',
+  aliases: ['tos'],
   description: 'Send the TOS panel.',
   async execute(message) {
     await message.delete().catch(() => {});
