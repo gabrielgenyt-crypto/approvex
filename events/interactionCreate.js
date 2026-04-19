@@ -132,14 +132,65 @@ async function createTicketChannel(interaction, ticketType, fields) {
 
 // tos page content for the paneltos dropdown
 const TOS_PAGES = {
-  general: { title: '\uD83D\uDCDC Terms of Service', desc: '**By purchasing any product, you agree to the following:**\n\n**No Refunds**\nAll sales are final.\n\n**Payment**\nMust be completed before delivery.\n\n**Delivery**\nDelivery times may vary.\n\n**Replacement**\nOnly if issue is on our side.\n\n**Responsibility**\nWe are not responsible for misuse.\n\n**Revoke Waves**\nNo reimbursement for mass revokes.\n\n**Changes**\nWe may update TOS anytime.' },
-  nitro: { title: '\uD83C\uDF81 Nitro TOS', desc: '\u2022 25-day revoke warranty\n\u2022 Must provide full video proof\n\u2022 Show claiming process + gift link\n\u2022 No proof = no replacement\n\u2022 Replacement depends on situation\n\u2022 24h window for claims\n\u2022 Revoke email required' },
-  members: { title: '\uD83D\uDC65 Discord Members TOS', desc: '\u2022 Members added via bot\n\u2022 If kicked = no refund\n\u2022 No warranty if Discord terminates tokens' },
-  socials: { title: '\uD83D\uDCF1 Socials TOS', desc: '\u2022 Refill only if requested in ticket\n\u2022 Orders may take up to 48h\n\u2022 Must provide Order ID\n\u2022 No Order ID = no warranty\n\u2022 Username change = order fails\n\u2022 Account must stay public' },
-  minecraft: { title: '\u26CF\uFE0F Minecraft TOS', desc: '**Replacement if:**\n\u2022 Pulled back within 7 days\n\u2022 Not as described\n\u2022 Locked within 7 days\n\n**Your responsibility:**\n\u2022 Secure account immediately\n\u2022 You are responsible after delivery' },
-  boosts: { title: '\uD83D\uDE80 Server Boosts TOS', desc: '\u2022 No warranty if you kick/ban tokens\n\u2022 No warranty for token issues' },
-  accounts: { title: '\uD83D\uDD10 Accounts TOS', desc: '\u2022 No warranty for revoke waves\n\u2022 No warranty if access is lost\n\u2022 Must secure account immediately\n\u2022 Sharing/multiple IP = risk\n\u2022 Buyer mistakes = no replacement' },
-  fortnite: { title: '\uD83D\uDEE0\uFE0F Fortnite TOS', desc: '\u2022 Includes full account + webmail\n\u2022 Email change may be delayed\n\u2022 Depends on Epic security\n\n\u2022 No responsibility after delivery\n\u2022 Buying = agreeing to TOS' },
+  nitro: {
+    title: '<a:nitro:1494697983806013520> Nitro',
+    desc: [
+      '\u2022 25-day revoke warranty.',
+      '\u2022 If Nitro is claimed, you must provide a video from when we send you the link.',
+      '\u2022 You must record yourself claiming the Nitro and clearly showing the gift link for a replacement. If you do not have this, we cannot provide anything.',
+      '\u2022 Refunds or replacements are decided based on the situation (mainly replacements are provided).',
+      '\u2022 You have 24 hours to request a refund or replacement after the email is sent via Discord.',
+      '\u2022 A revoke email is required to receive a replacement.',
+    ].join('\n'),
+  },
+  members: {
+    title: '<:member:1493274578909401199> Discord Members',
+    desc: [
+      '\u2022 Members are added by a **bot** that you must add. If you or a **security** bot kick the members, no **refund** will be provided.',
+      '\u2022 No **warranty** is provided if Discord terminates the tokens.',
+    ].join('\n'),
+  },
+  socials: {
+    title: '<:tiktok:1494710867881627688> , <:instagram:1494710719323836437> Socials',
+    desc: [
+      '\u2022 Social boost services (such as TikTok & Instagram) only include a refill warranty if requested in a ticket.',
+      '\u2022 Orders can take up to 48 hours. If there are still issues, create a ticket and provide your Order ID.',
+      '\u2022 If you do not have the Order ID, we cannot provide any warranty (it is always given in the ticket and must be saved).',
+      '\u2022 Changing your username while an order is pending will cause the order to fail and no refund will be provided.',
+      '\u2022 Your account must remain public at all times. If it is private, the order will fail and no refund will be provided.',
+    ].join('\n'),
+  },
+  minecraft: {
+    title: '<:minecraft:1493273365073498273> Minecraft',
+    desc: [
+      '**Full Replacement**',
+      '\u2022 A full replacement is provided if:',
+      '  \u2022 The account is pulled back by someone other than the buyer within 7 days.',
+      '  \u2022 The product does not match its description.',
+      '  \u2022 The account gets locked within 7 days.',
+      '',
+      '**Your Responsibilities**',
+      '\u2022 You must change the password and security information immediately.',
+      '\u2022 You are responsible for how you use the account.',
+    ].join('\n'),
+  },
+  boosts: {
+    title: '<a:server_boost:1492493880220979351> Server Boosts',
+    desc: [
+      '\u2022 No warranty is provided if you kick or ban tokens from the server.',
+      '\u2022 No warranty is provided if anything happens to the tokens.',
+    ].join('\n'),
+  },
+  accounts: {
+    title: '<:netflix:1493274486517010442> , <:spotify:1493274296485937212> , <:youtube:1493274198708195558> Accounts',
+    desc: [
+      '\u2022 No warranty is provided for revoke waves or mass bans.',
+      '\u2022 No warranty is provided if the account is reclaimed or access is lost after delivery.',
+      '\u2022 You must secure the account immediately after receiving it (change password, email, and security details if possible).',
+      '\u2022 Sharing the account, using it on multiple IPs, or suspicious activity may lead to the account being locked \u2014 no replacement will be provided.',
+      '\u2022 If the account details are changed incorrectly or lost by the buyer, no replacement will be provided.',
+    ].join('\n'),
+  },
 };
 
 // help dropdown pages

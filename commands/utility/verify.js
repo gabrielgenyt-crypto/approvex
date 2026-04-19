@@ -1,7 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { isStaff } = require('../../utils/helpers');
 
-const VERIFY_URL = 'https://discord.com/oauth2/authorize?client_id=1463894020701818963&redirect_uri=https://restorecord.com/api/callback&response_type=code&scope=identify+guilds.join&state=1400506341990334534&prompt=none';
+const VERIFY_URL = 'https://discord.com/oauth2/authorize?client_id=1495406522375602326&redirect_uri=https://restorecord.com/api/callback&response_type=code&scope=identify+guilds.join&state=1493233742007894168&prompt=none';
 
 module.exports = {
   name: 'verify',
