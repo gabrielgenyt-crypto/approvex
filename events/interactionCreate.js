@@ -368,6 +368,7 @@ module.exports = {
               { label: 'France',         value: 'france',         emoji: '\uD83C\uDDEB\uD83C\uDDF7' },
               { label: 'United Kingdom', value: 'united_kingdom', emoji: '\uD83C\uDDEC\uD83C\uDDE7' },
               { label: 'Netherlands',    value: 'netherlands',    emoji: '\uD83C\uDDF3\uD83C\uDDF1' },
+              { label: 'Belgium',        value: 'belgium',        emoji: '\uD83C\uDDE7\uD83C\uDDEA' },
               { label: 'Spain',          value: 'spain',          emoji: '\uD83C\uDDEA\uD83C\uDDF8' },
               { label: 'Italy',          value: 'italy',          emoji: '\uD83C\uDDEE\uD83C\uDDF9' },
               { label: 'United States',  value: 'united_states',  emoji: '\uD83C\uDDFA\uD83C\uDDF8' },
