@@ -4,17 +4,13 @@ const {
 } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
 const { E } = require('../../utils/constants');
-const { isStaff, isLimitedMod } = require('../../utils/helpers');
+const { isStaffOrMod } = require('../../utils/helpers');
 
 module.exports = {
   name: 'exchangepanel',
   description: 'Send the exchange panel.',
   async execute(message) {
-    if (!isStaff(message.member)) return;
-    if (isLimitedMod(message.member)) {
-      return message.channel.send({ content: `${E.deny} You can not use this function.` })
-        .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    }
+    if (!isStaffOrMod(message.member)) return;
 
     await message.delete().catch(() => {});
 
