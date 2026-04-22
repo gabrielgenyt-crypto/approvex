@@ -9,14 +9,38 @@ const {
   TextInputBuilder,
   TextInputStyle,
   AttachmentBuilder,
+  StringSelectMenuBuilder,
 } = require('discord.js');
 const { makeEmbed, errorEmbed } = require('../utils/embed');
 const { getDb } = require('../utils/db');
 const { buildTranscriptHtml } = require('../utils/transcript');
-const { E, ROLES, CHANNELS, TICKET_CATS } = require('../utils/constants');
+const { E, ROLES, CHANNELS, TICKET_CATS, EXCHANGE_FEES } = require('../utils/constants');
 const { isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
+
+// In-memory state for multi-step exchange flows (keyed by user id).
+// Each entry: { sending, country, currency, receiving, crypto }
+const exchangeFlows = new Map();
+
+// Human-readable labels for exchange methods
+const SEND_LABELS = {
+  paypal_balance: 'PayPal Balance',
+  paypal_card: 'PayPal Card',
+  crypto: 'Crypto',
+  revolut: 'Revolut',
+  other: 'Other',
+};
+
+// Determine the fee percentage for a given exchange route
+function getExchangeFee(sending, receiving) {
+  const isPaypal = sending === 'paypal_balance' || sending === 'paypal_card';
+  if (isPaypal && receiving === 'crypto') return EXCHANGE_FEES.paypal_to_crypto;
+  if (sending === 'revolut' || receiving === 'revolut') return EXCHANGE_FEES.revolut;
+  if (sending === 'crypto' && receiving === 'crypto') return EXCHANGE_FEES.crypto_to_crypto;
+  if (isPaypal && receiving === 'revolut') return EXCHANGE_FEES.revolut;
+  return EXCHANGE_FEES.default;
+}
 
 function ticketOverwrites(guild, userId, botId) {
   const perms = [
@@ -326,6 +350,194 @@ module.exports = {
         else return;
         return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
+
+      // ── Exchange panel flow: Step 1 — What are you sending? ──
+      if (interaction.customId === 'exchange_send_select') {
+        const sending = interaction.values[0];
+        exchangeFlows.set(interaction.user.id, { sending });
+
+        const isPaypal = sending === 'paypal_balance' || sending === 'paypal_card';
+
+        if (isPaypal) {
+          // PayPal users must specify their country first
+          const countryMenu = new StringSelectMenuBuilder()
+            .setCustomId('exchange_country_select')
+            .setPlaceholder('Which country is your PayPal account from?')
+            .addOptions([
+              { label: 'Germany',        value: 'germany',        emoji: '\uD83C\uDDE9\uD83C\uDDEA' },
+              { label: 'France',         value: 'france',         emoji: '\uD83C\uDDEB\uD83C\uDDF7' },
+              { label: 'United Kingdom', value: 'united_kingdom', emoji: '\uD83C\uDDEC\uD83C\uDDE7' },
+              { label: 'Netherlands',    value: 'netherlands',    emoji: '\uD83C\uDDF3\uD83C\uDDF1' },
+              { label: 'Spain',          value: 'spain',          emoji: '\uD83C\uDDEA\uD83C\uDDF8' },
+              { label: 'Italy',          value: 'italy',          emoji: '\uD83C\uDDEE\uD83C\uDDF9' },
+              { label: 'United States',  value: 'united_states',  emoji: '\uD83C\uDDFA\uD83C\uDDF8' },
+              { label: 'Other',          value: 'other',          emoji: '\uD83C\uDF10' },
+            ]);
+          const row = new ActionRowBuilder().addComponents(countryMenu);
+          return interaction.reply({
+            embeds: [makeEmbed({
+              title: `${E.paypal} PayPal Country`,
+              description: `${E.info} Which country is your PayPal account registered in?\nThis helps us process your exchange correctly.`,
+            })],
+            components: [row],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        // Non-PayPal: skip country, go straight to currency
+        const currencyMenu = new StringSelectMenuBuilder()
+          .setCustomId('exchange_currency_select')
+          .setPlaceholder('Which currency?')
+          .addOptions([
+            { label: 'EUR (\u20AC)', value: 'eur' },
+            { label: 'USD ($)',  value: 'usd' },
+            { label: 'GBP (\u00A3)', value: 'gbp' },
+          ]);
+        const row = new ActionRowBuilder().addComponents(currencyMenu);
+        return interaction.reply({
+          embeds: [makeEmbed({
+            title: `${E.exchange} Select Currency`,
+            description: `${E.info} Which currency are you sending?`,
+          })],
+          components: [row],
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+
+      // ── Exchange panel flow: Step 2 (PayPal only) — Country ──
+      if (interaction.customId === 'exchange_country_select') {
+        const flow = exchangeFlows.get(interaction.user.id);
+        if (!flow) return interaction.reply({ embeds: [errorEmbed('Session expired. Please start again.')], flags: MessageFlags.Ephemeral });
+        flow.country = interaction.values[0];
+
+        const currencyMenu = new StringSelectMenuBuilder()
+          .setCustomId('exchange_currency_select')
+          .setPlaceholder('Which currency?')
+          .addOptions([
+            { label: 'EUR (\u20AC)', value: 'eur' },
+            { label: 'USD ($)',  value: 'usd' },
+            { label: 'GBP (\u00A3)', value: 'gbp' },
+          ]);
+        const row = new ActionRowBuilder().addComponents(currencyMenu);
+        return interaction.reply({
+          embeds: [makeEmbed({
+            title: `${E.exchange} Select Currency`,
+            description: `${E.info} Which currency are you sending?`,
+          })],
+          components: [row],
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+
+      // ── Exchange panel flow: Step 3 — Currency ──
+      if (interaction.customId === 'exchange_currency_select') {
+        const flow = exchangeFlows.get(interaction.user.id);
+        if (!flow) return interaction.reply({ embeds: [errorEmbed('Session expired. Please start again.')], flags: MessageFlags.Ephemeral });
+        flow.currency = interaction.values[0];
+
+        // Build "receive" options based on what they are sending
+        const receiveOptions = [];
+        const isPaypal = flow.sending === 'paypal_balance' || flow.sending === 'paypal_card';
+
+        if (!isPaypal) {
+          receiveOptions.push({ label: 'PayPal', value: 'paypal', emoji: E.paypal });
+        }
+        if (flow.sending !== 'crypto') {
+          receiveOptions.push({ label: 'Crypto', value: 'crypto', emoji: E.crypto });
+        }
+        if (flow.sending !== 'revolut') {
+          receiveOptions.push({ label: 'Revolut', value: 'revolut', emoji: E.revolut });
+        }
+        // Crypto-to-crypto is always available when sending crypto
+        if (flow.sending === 'crypto') {
+          receiveOptions.push({ label: 'Crypto (different coin)', value: 'crypto', emoji: E.crypto });
+        }
+
+        if (receiveOptions.length === 0) {
+          receiveOptions.push({ label: 'Other', value: 'other', emoji: E.tool });
+        }
+
+        const sendLabel = SEND_LABELS[flow.sending] || flow.sending;
+        const receiveMenu = new StringSelectMenuBuilder()
+          .setCustomId('exchange_receive_select')
+          .setPlaceholder(`${sendLabel} to?`)
+          .addOptions(receiveOptions);
+        const row = new ActionRowBuilder().addComponents(receiveMenu);
+        return interaction.reply({
+          embeds: [makeEmbed({
+            title: `${E.exchange} ${sendLabel} To?`,
+            description: `${E.info} What do you want to receive in exchange for your **${sendLabel}**?`,
+          })],
+          components: [row],
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+
+      // ── Exchange panel flow: Step 4 — What do you want to receive? ──
+      if (interaction.customId === 'exchange_receive_select') {
+        const flow = exchangeFlows.get(interaction.user.id);
+        if (!flow) return interaction.reply({ embeds: [errorEmbed('Session expired. Please start again.')], flags: MessageFlags.Ephemeral });
+        flow.receiving = interaction.values[0];
+
+        if (flow.receiving === 'crypto') {
+          // Ask which crypto
+          const cryptoMenu = new StringSelectMenuBuilder()
+            .setCustomId('exchange_crypto_select')
+            .setPlaceholder('Which cryptocurrency?')
+            .addOptions([
+              { label: 'Solana (SOL)',   value: 'solana',   emoji: E.crypto },
+              { label: 'Litecoin (LTC)', value: 'litecoin', emoji: E.ltc },
+              { label: 'Bitcoin (BTC)',  value: 'bitcoin',  emoji: E.crypto },
+            ]);
+          const row = new ActionRowBuilder().addComponents(cryptoMenu);
+          return interaction.reply({
+            embeds: [makeEmbed({
+              title: `${E.crypto} Select Cryptocurrency`,
+              description: `${E.info} Which cryptocurrency would you like to receive?`,
+            })],
+            components: [row],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        // No crypto selection needed — go straight to amount modal
+        const modal = new ModalBuilder()
+          .setCustomId('modal_exchange_amount')
+          .setTitle('Exchange Amount');
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId('exchange_amount')
+              .setLabel('How much do you want to exchange?')
+              .setPlaceholder('e.g. 25')
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true),
+          ),
+        );
+        return interaction.showModal(modal);
+      }
+
+      // ── Exchange panel flow: Step 5 (crypto only) — Which crypto? ──
+      if (interaction.customId === 'exchange_crypto_select') {
+        const flow = exchangeFlows.get(interaction.user.id);
+        if (!flow) return interaction.reply({ embeds: [errorEmbed('Session expired. Please start again.')], flags: MessageFlags.Ephemeral });
+        flow.crypto = interaction.values[0];
+
+        const modal = new ModalBuilder()
+          .setCustomId('modal_exchange_amount')
+          .setTitle('Exchange Amount');
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId('exchange_amount')
+              .setLabel('How much do you want to exchange?')
+              .setPlaceholder('e.g. 25')
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true),
+          ),
+        );
+        return interaction.showModal(modal);
+      }
     }
 
     if (interaction.isModalSubmit()) {
@@ -351,6 +563,52 @@ module.exports = {
         return createTicketChannel(interaction, 'support', [
           { name: 'Issue', value: interaction.fields.getTextInputValue('issue') },
         ]);
+      }
+
+      // ── Exchange panel flow: Final step — Amount entered, show summary & create ticket ──
+      if (interaction.customId === 'modal_exchange_amount') {
+        const flow = exchangeFlows.get(interaction.user.id);
+        if (!flow) return interaction.reply({ embeds: [errorEmbed('Session expired. Please start again from the exchange panel.')], flags: MessageFlags.Ephemeral });
+
+        const rawAmount = interaction.fields.getTextInputValue('exchange_amount').trim();
+        const amount = parseFloat(rawAmount);
+        if (isNaN(amount) || amount <= 0) {
+          return interaction.reply({ embeds: [errorEmbed('Please enter a valid positive number.')], flags: MessageFlags.Ephemeral });
+        }
+        if (amount < 2) {
+          return interaction.reply({ embeds: [errorEmbed('The minimum exchange amount is 2.00\u20AC.')], flags: MessageFlags.Ephemeral });
+        }
+
+        flow.amount = amount;
+
+        const feePercent = getExchangeFee(flow.sending, flow.receiving);
+        const feeAmount = Math.round(amount * feePercent) / 100;
+        const totalAfterFee = Math.round((amount - feeAmount) * 100) / 100;
+
+        const sendLabel = SEND_LABELS[flow.sending] || flow.sending;
+        const currencyLabel = (flow.currency || 'eur').toUpperCase();
+        const receiveLabel = flow.receiving === 'crypto'
+          ? (flow.crypto || 'crypto').charAt(0).toUpperCase() + (flow.crypto || 'crypto').slice(1)
+          : (flow.receiving || 'unknown').charAt(0).toUpperCase() + (flow.receiving || 'unknown').slice(1);
+        const countryLabel = flow.country
+          ? flow.country.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+          : null;
+
+        // Build ticket fields
+        const fields = [
+          { name: 'Sending', value: sendLabel },
+          { name: 'Receiving', value: receiveLabel },
+          { name: 'Currency', value: currencyLabel },
+          { name: 'Amount', value: `${amount.toFixed(2)} ${currencyLabel}` },
+          { name: 'Fee', value: `${feePercent}% (${feeAmount.toFixed(2)} ${currencyLabel})` },
+          { name: 'You Receive', value: `~${totalAfterFee.toFixed(2)} ${currencyLabel}` },
+        ];
+        if (countryLabel) fields.splice(1, 0, { name: 'Country', value: countryLabel });
+
+        // Clean up the flow state
+        exchangeFlows.delete(interaction.user.id);
+
+        return createTicketChannel(interaction, 'exchange', fields);
       }
 
       if (interaction.customId === 'modal_set_pp') {

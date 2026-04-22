@@ -11,11 +11,15 @@ const E = {
   hashtag:  '<:akey:1480005245894397985>',
   time:     '<:akey:1480005245894397985>',
   tool:     '<:Tool:1478142607539441871>',
-  paypal:   '<:paypal:1400828106201108581>',
+  paypal:   '<:paypall:1400828106201108581>',
   logs:     '<:Like:1479991073098043403>',
   light:    '<:lightning:1478489166143557836>',
   approve:  '<:approve:1486322316659916890>',
   arrowe:   '<a:arrowe:1400825490909958268>',
+  info:     '<:info:1478488967299989534>',
+  ltc:      '<:ltc:1400824170614358157>',
+  crypto:   '<:crypto:1400509717863727144>',
+  revolut:  '<:Revolut:1483947738000392353>',
 };
 
 const PREFIX = '=';
@@ -45,4 +49,12 @@ const TICKET_CATS = {
 
 const GUILD_ID = process.env.GUILD_ID || null;
 
-module.exports = { EMBED_COLOR, E, PREFIX, FOOTER, ROLES, CHANNELS, TICKET_CATS, GUILD_ID };
+// Fee percentages for exchange routes
+const EXCHANGE_FEES = {
+  paypal_to_crypto: 7,
+  revolut: 10,
+  crypto_to_crypto: 0,
+  default: 7,
+};
+
+module.exports = { EMBED_COLOR, E, PREFIX, FOOTER, ROLES, CHANNELS, TICKET_CATS, GUILD_ID, EXCHANGE_FEES };
