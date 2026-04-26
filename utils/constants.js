@@ -31,6 +31,7 @@ const ROLES = {
   mod:         process.env.MOD_ROLE_ID         || null,
   seller:      process.env.SELLER_ROLE_ID      || null,
   customer:    process.env.CUSTOMER_ROLE_ID    || null,
+  exchanger:   '1497275659284647987',
   approveteam: '1493262996158287882',
 };
 

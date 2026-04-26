@@ -15,7 +15,7 @@ const { makeEmbed, errorEmbed } = require('../utils/embed');
 const { getDb } = require('../utils/db');
 const { buildTranscriptHtml } = require('../utils/transcript');
 const { E, ROLES, CHANNELS, TICKET_CATS, EXCHANGE_FEES } = require('../utils/constants');
-const { isManagerOrHigher, isStaffOrMod } = require('../utils/helpers');
+const { isManagerOrHigher, isStaffOrMod, isExchanger } = require('../utils/helpers');
 const fs = require('fs');
 const path = require('path');
 
@@ -42,7 +42,7 @@ function getExchangeFee(sending, receiving) {
   return EXCHANGE_FEES.default;
 }
 
-function ticketOverwrites(guild, userId, botId) {
+function ticketOverwrites(guild, userId, botId, ticketType) {
   const perms = [
     { id: guild.roles.everyone, deny: [PermissionFlagsBits.ViewChannel] },
     { id: userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
@@ -59,6 +59,10 @@ function ticketOverwrites(guild, userId, botId) {
   if (ROLES.mod) {
     perms.push({ id: ROLES.mod, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] });
   }
+  // Exchangers can view exchange tickets (but cannot send messages until they claim)
+  if (ticketType === 'exchange' && ROLES.exchanger) {
+    perms.push({ id: ROLES.exchanger, allow: [PermissionFlagsBits.ViewChannel], deny: [PermissionFlagsBits.SendMessages] });
+  }
   return perms;
 }
 
@@ -73,7 +77,7 @@ async function createTicketChannel(interaction, ticketType, fields) {
     name: `${ticketType}-${user.username}`,
     type: ChannelType.GuildText,
     parent: parent ? parent.id : undefined,
-    permissionOverwrites: ticketOverwrites(guild, user.id, interaction.client.user?.id),
+    permissionOverwrites: ticketOverwrites(guild, user.id, interaction.client.user?.id, ticketType),
   });
 
   const ticketId = Math.floor(1000 + Math.random() * 9000);
@@ -134,6 +138,24 @@ async function createTicketChannel(interaction, ticketType, fields) {
     );
 
     await channel.send({ embeds: [tosEmbed], components: [tosRow] });
+
+    // "Waiting for Exchanger" claim message
+    const claimEmbed = makeEmbed({
+      title: `${E.exchange} Waiting for Exchanger`,
+      description: [
+        `${E.info} This exchange ticket is **waiting for an exchanger** to claim it.`,
+        '',
+        `${E.arrowe} Only verified exchangers can claim this ticket.`,
+        `${E.arrowe} Once claimed, the exchanger will handle your exchange.`,
+        `${E.arrowe} Do **not** deal with anyone who has not officially claimed this ticket.`,
+      ].join('\n'),
+    });
+
+    const claimRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('claim_exchange').setLabel('Claim Ticket').setStyle(ButtonStyle.Success),
+    );
+
+    await channel.send({ embeds: [claimEmbed], components: [claimRow] });
   }
 
   // log to the ticket log channel
@@ -649,6 +671,101 @@ module.exports = {
       return interaction.reply({ content: msg });
     }
 
+    // ── Exchanger claim button ──
+    if (interaction.customId === 'claim_exchange') {
+      // Only exchangers (or staff) can claim
+      if (!isExchanger(interaction.member) && !isStaffOrMod(interaction.member)) {
+        return interaction.reply({ content: `${E.deny} Only verified exchangers can claim tickets.`, flags: MessageFlags.Ephemeral });
+      }
+
+      const channel = interaction.channel;
+      if (!channel.topic || !channel.topic.includes('|')) {
+        return interaction.reply({ content: `${E.deny} Ticket data missing.`, flags: MessageFlags.Ephemeral });
+      }
+
+      const [creatorId, ticketId] = channel.topic.split('|');
+
+      // Prevent exchanger from claiming their own ticket
+      if (interaction.user.id === creatorId) {
+        return interaction.reply({ content: `${E.deny} You cannot claim your own ticket.`, flags: MessageFlags.Ephemeral });
+      }
+
+      const db = getDb();
+
+      // Check if already claimed
+      const existing = db.prepare('SELECT exchanger_id FROM exchange_claims WHERE ticket_id = ? AND status = ?').get(ticketId, 'active');
+      if (existing) {
+        return interaction.reply({ content: `${E.deny} This ticket has already been claimed by <@${existing.exchanger_id}>.`, flags: MessageFlags.Ephemeral });
+      }
+
+      // Parse the ticket amount from the embed fields
+      let ticketAmount = 0;
+      const firstMsg = (await channel.messages.fetch({ limit: 5 })).find(m =>
+        m.author.id === interaction.client.user?.id && m.embeds[0]?.fields?.some(f => f.name === 'Amount'),
+      );
+      if (firstMsg) {
+        const amountField = firstMsg.embeds[0].fields.find(f => f.name === 'Amount');
+        if (amountField) {
+          const parsed = parseFloat(amountField.value.replace(/[^0-9.]/g, ''));
+          if (!isNaN(parsed)) ticketAmount = parsed;
+        }
+      }
+
+      // Check exchanger security fee limit (staff bypass this check)
+      if (isExchanger(interaction.member) && !isStaffOrMod(interaction.member)) {
+        const limitRow = db.prepare('SELECT max_amount FROM exchanger_limits WHERE user_id = ?').get(interaction.user.id);
+        if (!limitRow) {
+          return interaction.reply({
+            content: `${E.deny} You do not have a security fee limit set. Ask a manager to run \`/securefee\` for you first.`,
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        // Sum of all active claims for this exchanger
+        const activeSum = db.prepare(
+          'SELECT COALESCE(SUM(amount), 0) AS total FROM exchange_claims WHERE exchanger_id = ? AND status = ?',
+        ).get(interaction.user.id, 'active');
+        const usedBudget = activeSum.total;
+        const remaining = limitRow.max_amount - usedBudget;
+
+        if (ticketAmount > remaining) {
+          return interaction.reply({
+            content: `${E.deny} You cannot claim this ticket. Your remaining budget is **${remaining.toFixed(2)}\u20AC** but this ticket is **${ticketAmount.toFixed(2)}\u20AC**.`,
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+      }
+
+      // Record the claim
+      db.prepare(
+        'INSERT INTO exchange_claims (ticket_id, channel_id, exchanger_id, amount, status) VALUES (?, ?, ?, ?, ?)',
+      ).run(ticketId, channel.id, interaction.user.id, ticketAmount, 'active');
+
+      // Grant the exchanger send-message permission in this channel
+      await channel.permissionOverwrites.edit(interaction.user, {
+        ViewChannel: true,
+        SendMessages: true,
+      });
+
+      // Disable the claim button and update the embed
+      const claimedEmbed = makeEmbed({
+        title: `${E.exchange} Ticket Claimed`,
+        description: [
+          `${E.success} This ticket has been claimed by ${interaction.user}.`,
+          '',
+          `${E.arrowe} The exchanger will now handle your exchange.`,
+          `${E.arrowe} Only deal with ${interaction.user} \u2014 do not trust anyone else.`,
+        ].join('\n'),
+      });
+
+      const disabledClaimRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('claim_exchange').setLabel(`Claimed by ${interaction.user.username}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
+      );
+
+      await interaction.message.edit({ embeds: [claimedEmbed], components: [disabledClaimRow] });
+      return interaction.reply({ content: `${E.success} ${interaction.user} has claimed this exchange ticket.` });
+    }
+
     if (interaction.customId === 'set_pp') {
       const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
@@ -699,14 +816,42 @@ module.exports = {
 
     if (interaction.customId === 'close_ticket') {
       await interaction.deferReply();
-      if (!isStaffOrMod(interaction.member)) {
+
+      const canClose = isStaffOrMod(interaction.member) || isExchanger(interaction.member);
+      if (!canClose) {
         return interaction.followUp({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
+
       const channel = interaction.channel;
       if (TICKET_CATS.closed && channel.parentId === TICKET_CATS.closed) {
         return interaction.followUp({ content: `${E.deny} This ticket is already closed.`, flags: MessageFlags.Ephemeral });
       }
 
+      // If the closer is an exchanger (not staff), require client approval first
+      const isExchangeTicket = TICKET_CATS.exchange && channel.parentId === TICKET_CATS.exchange;
+      if (isExchangeTicket && isExchanger(interaction.member) && !isStaffOrMod(interaction.member)) {
+        const creatorId = channel.topic ? channel.topic.split('|')[0] : null;
+
+        const approvalEmbed = makeEmbed({
+          title: `${E.info} Close Request`,
+          description: [
+            `${E.exchange} **${interaction.user}** (exchanger) wants to close this ticket.`,
+            '',
+            `${E.arrowe} <@${creatorId}>, please confirm that the exchange is complete.`,
+            `${E.arrowe} If you are not satisfied, click **Decline** to keep the ticket open.`,
+          ].join('\n'),
+          footer: `Requested by ${interaction.user.tag}`,
+        });
+
+        const approvalRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('client_accept_close').setLabel('Accept & Close').setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId('client_decline_close').setLabel('Decline').setStyle(ButtonStyle.Danger),
+        );
+
+        return interaction.followUp({ content: creatorId ? `<@${creatorId}>` : '', embeds: [approvalEmbed], components: [approvalRow] });
+      }
+
+      // Staff/mod close: proceed immediately
       let creator = null;
       if (channel.topic) {
         try {
@@ -721,6 +866,13 @@ module.exports = {
       }
       if (creator) await channel.permissionOverwrites.delete(creator).catch(() => {});
 
+      // Mark exchange claim as completed if applicable
+      if (channel.topic && channel.topic.includes('|')) {
+        const [_cid, tId] = channel.topic.split('|');
+        const db = getDb();
+        db.prepare("UPDATE exchange_claims SET status = 'completed' WHERE ticket_id = ? AND status = 'active'").run(tId);
+      }
+
       const embed = makeEmbed({
         title: `${E.deny} Ticket Closed`,
         description: 'This ticket has been moved to the closed category.\n\nUse the button below to reopen if needed.',
@@ -733,6 +885,79 @@ module.exports = {
       );
 
       return interaction.followUp({ embeds: [embed], components: [reopenRow] });
+    }
+
+    // ── Client accepts exchanger close request ──
+    if (interaction.customId === 'client_accept_close') {
+      const channel = interaction.channel;
+      if (!channel.topic || !channel.topic.includes('|')) {
+        return interaction.reply({ content: `${E.deny} Ticket data missing.`, flags: MessageFlags.Ephemeral });
+      }
+
+      const [creatorId, ticketId] = channel.topic.split('|');
+
+      // Only the ticket creator can accept
+      if (interaction.user.id !== creatorId) {
+        return interaction.reply({ content: `${E.deny} Only the ticket creator can accept the close request.`, flags: MessageFlags.Ephemeral });
+      }
+
+      await interaction.deferReply();
+
+      // Disable the approval buttons
+      const disabledRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('client_accept_close').setLabel('Accept & Close').setStyle(ButtonStyle.Success).setDisabled(true),
+        new ButtonBuilder().setCustomId('client_decline_close').setLabel('Decline').setStyle(ButtonStyle.Danger).setDisabled(true),
+      );
+      await interaction.message.edit({ components: [disabledRow] });
+
+      // Mark exchange claim as completed
+      const db = getDb();
+      db.prepare("UPDATE exchange_claims SET status = 'completed' WHERE ticket_id = ? AND status = 'active'").run(ticketId);
+
+      // Close the ticket
+      const creator = interaction.guild.members.cache.get(creatorId);
+      if (TICKET_CATS.closed) {
+        const closedCat = interaction.guild.channels.cache.get(TICKET_CATS.closed);
+        if (closedCat) await channel.edit({ parent: closedCat.id });
+      }
+      if (creator) await channel.permissionOverwrites.delete(creator).catch(() => {});
+
+      const embed = makeEmbed({
+        title: `${E.success} Exchange Completed & Ticket Closed`,
+        description: `${interaction.user} confirmed the exchange is complete.\n\nUse the button below to reopen if needed.`,
+        footer: `Accepted by ${interaction.user.tag}`,
+      });
+
+      const reopenRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('reopen_ticket').setLabel('Reopen').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('delete_ticket').setLabel('Delete').setStyle(ButtonStyle.Danger),
+      );
+
+      return interaction.followUp({ embeds: [embed], components: [reopenRow] });
+    }
+
+    // ── Client declines exchanger close request ──
+    if (interaction.customId === 'client_decline_close') {
+      const channel = interaction.channel;
+      if (!channel.topic || !channel.topic.includes('|')) {
+        return interaction.reply({ content: `${E.deny} Ticket data missing.`, flags: MessageFlags.Ephemeral });
+      }
+
+      const [creatorId] = channel.topic.split('|');
+
+      // Only the ticket creator can decline
+      if (interaction.user.id !== creatorId) {
+        return interaction.reply({ content: `${E.deny} Only the ticket creator can respond to the close request.`, flags: MessageFlags.Ephemeral });
+      }
+
+      // Disable the approval buttons
+      const disabledRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('client_accept_close').setLabel('Accept & Close').setStyle(ButtonStyle.Success).setDisabled(true),
+        new ButtonBuilder().setCustomId('client_decline_close').setLabel('Decline').setStyle(ButtonStyle.Danger).setDisabled(true),
+      );
+      await interaction.message.edit({ components: [disabledRow] });
+
+      return interaction.reply({ content: `${E.deny} ${interaction.user} has declined the close request. The ticket remains open.` });
     }
 
     if (interaction.customId === 'reopen_ticket') {
@@ -815,6 +1040,13 @@ module.exports = {
             });
           } catch { /* dm might be closed */ }
         }
+      }
+
+      // Release exchanger budget before deleting
+      if (channel.topic && channel.topic.includes('|')) {
+        const [_cid2, tId2] = channel.topic.split('|');
+        const db2 = getDb();
+        db2.prepare("UPDATE exchange_claims SET status = 'completed' WHERE ticket_id = ? AND status = 'active'").run(tId2);
       }
 
       await interaction.followUp({ content: `${E.deny} Deleting ticket...`, flags: MessageFlags.Ephemeral });

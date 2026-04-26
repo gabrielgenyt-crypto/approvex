@@ -1,5 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { makeEmbed } = require('../../utils/embed');
+const { getDb } = require('../../utils/db');
 const { E, TICKET_CATS } = require('../../utils/constants');
 const { isStaffOrMod } = require('../../utils/helpers');
 
@@ -16,7 +17,7 @@ module.exports = {
       return message.channel.send({ content: '\u274C Ticket data missing.' });
     }
 
-    const [creatorId] = message.channel.topic.split('|');
+    const [creatorId, ticketId] = message.channel.topic.split('|');
     const creator = message.guild.members.cache.get(creatorId);
 
     if (TICKET_CATS.closed) {
@@ -24,6 +25,12 @@ module.exports = {
       if (closedCat) await message.channel.edit({ parent: closedCat.id });
     }
     if (creator) await message.channel.permissionOverwrites.delete(creator).catch(() => {});
+
+    // Release exchanger budget if this was a claimed exchange ticket
+    if (ticketId) {
+      const db = getDb();
+      db.prepare("UPDATE exchange_claims SET status = 'completed' WHERE ticket_id = ? AND status = 'active'").run(ticketId);
+    }
 
     const embed = makeEmbed({
       title: `${E.success} Ticket Closed`,

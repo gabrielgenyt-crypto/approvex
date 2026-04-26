@@ -29,6 +29,22 @@ function _migrate(db) {
       ticket_id TEXT PRIMARY KEY,
       filepath  TEXT NOT NULL
     );
+
+    -- Security fee limit per exchanger (set by staff via /securefee)
+    CREATE TABLE IF NOT EXISTS exchanger_limits (
+      user_id     TEXT PRIMARY KEY,
+      max_amount  REAL NOT NULL DEFAULT 0
+    );
+
+    -- Active exchange claims: tracks which exchanger claimed which ticket
+    CREATE TABLE IF NOT EXISTS exchange_claims (
+      ticket_id     TEXT PRIMARY KEY,
+      channel_id    TEXT NOT NULL,
+      exchanger_id  TEXT NOT NULL,
+      amount        REAL NOT NULL DEFAULT 0,
+      status        TEXT NOT NULL DEFAULT 'active',
+      claimed_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 }
 

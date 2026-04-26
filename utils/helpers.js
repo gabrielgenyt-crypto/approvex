@@ -26,6 +26,10 @@ function isSellerOrHigher(member) {
   return isStaffOrMod(member) || (ROLES.seller && member.roles.cache.has(ROLES.seller));
 }
 
+function isExchanger(member) {
+  return ROLES.exchanger && member.roles.cache.has(ROLES.exchanger);
+}
+
 // "5m", "10s", "2h", "1d" -> seconds
 function parseTime(str) {
   const match = str.match(/^(\d+)([smhd])$/i);
@@ -53,4 +57,4 @@ function safeCalculate(expr) {
   }
 }
 
-module.exports = { isStaff, isManager, isManagerOrHigher, isLimitedMod, isStaffOrMod, isSellerOrHigher, parseTime, safeCalculate };
+module.exports = { isStaff, isManager, isManagerOrHigher, isLimitedMod, isStaffOrMod, isSellerOrHigher, isExchanger, parseTime, safeCalculate };
