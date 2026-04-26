@@ -1,39 +1,43 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { getDb } = require('../../utils/db');
 const { E } = require('../../utils/constants');
 const { isManagerOrHigher } = require('../../utils/helpers');
 
 module.exports = {
-  slash: true,
-  data: new SlashCommandBuilder()
-    .setName('securefee')
-    .setDescription('Set the maximum exchange amount an exchanger can handle')
-    .addUserOption(opt =>
-      opt.setName('user').setDescription('The exchanger to configure').setRequired(true),
-    )
-    .addNumberOption(opt =>
-      opt
-        .setName('amount')
-        .setDescription('Maximum amount in EUR (e.g. 10)')
-        .setRequired(true)
-        .setMinValue(0),
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  name: 'securefee',
+  description: 'Set the maximum exchange amount an exchanger can handle.',
+  async execute(message, args) {
+    if (!isManagerOrHigher(message.member)) return;
 
-  async execute(interaction) {
-    if (!isManagerOrHigher(interaction.member)) {
-      return interaction.reply({ content: `${E.deny} Only managers and owners can use this command.`, ephemeral: true });
+    // Parse target user (mention or ID)
+    let target = message.mentions.members.first();
+    if (!target && args[0]) {
+      const id = args[0].replace(/[<@!>]/g, '');
+      if (/^\d{17,20}$/.test(id)) {
+        try {
+          target = await message.guild.members.fetch(id);
+        } catch {
+          return message.channel.send({ content: `${E.deny} Couldn't find that user.` });
+        }
+      }
     }
 
-    const target = interaction.options.getUser('user');
-    const amount = interaction.options.getNumber('amount');
+    const amountRaw = args[1];
+    if (!target || !amountRaw) {
+      return message.channel.send({
+        content: `${E.deny} Usage: \`=securefee @user <amount>\`\nExample: \`=securefee @user 10\``,
+      });
+    }
+
+    const amount = parseFloat(amountRaw.replace(/[^0-9.]/g, ''));
+    if (isNaN(amount) || amount < 0) {
+      return message.channel.send({ content: `${E.deny} Please provide a valid amount.` });
+    }
 
     const db = getDb();
 
     if (amount === 0) {
-      // Remove the limit entirely
       db.prepare('DELETE FROM exchanger_limits WHERE user_id = ?').run(target.id);
-      return interaction.reply({
+      return message.channel.send({
         content: `${E.success} Removed the security fee limit for ${target}. They can no longer claim tickets (no budget set).`,
       });
     }
@@ -49,7 +53,7 @@ module.exports = {
     const used = activeSum.total;
     const remaining = Math.max(0, amount - used);
 
-    return interaction.reply({
+    message.channel.send({
       content: [
         `${E.success} Security fee limit set for ${target}:`,
         `${E.arrowe} **Max budget:** ${amount.toFixed(2)}\u20AC`,
