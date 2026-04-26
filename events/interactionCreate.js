@@ -741,7 +741,14 @@ module.exports = {
         'INSERT INTO exchange_claims (ticket_id, channel_id, exchanger_id, amount, status) VALUES (?, ?, ?, ?, ?)',
       ).run(ticketId, channel.id, interaction.user.id, ticketAmount, 'active');
 
-      // Grant the exchanger send-message permission in this channel
+      // Hide this ticket from other exchangers by denying the exchanger role view access
+      if (ROLES.exchanger) {
+        await channel.permissionOverwrites.edit(ROLES.exchanger, {
+          ViewChannel: false,
+        });
+      }
+
+      // Grant the claiming exchanger personal access (overrides the role deny)
       await channel.permissionOverwrites.edit(interaction.user, {
         ViewChannel: true,
         SendMessages: true,

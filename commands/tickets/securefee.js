@@ -1,12 +1,13 @@
 const { getDb } = require('../../utils/db');
-const { E } = require('../../utils/constants');
+const { E, ROLES } = require('../../utils/constants');
 const { isManagerOrHigher } = require('../../utils/helpers');
 
 module.exports = {
   name: 'securefee',
   description: 'Set the maximum exchange amount an exchanger can handle.',
   async execute(message, args) {
-    if (!isManagerOrHigher(message.member)) return;
+    const hasCeo = ROLES.ceo && message.member.roles.cache.has(ROLES.ceo);
+    if (!isManagerOrHigher(message.member) && !hasCeo) return;
 
     // Parse target user (mention or ID)
     let target = message.mentions.members.first();
