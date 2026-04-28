@@ -12,7 +12,7 @@ module.exports = {
   async execute(message, args) {
     await message.delete().catch(() => {});
 
-    const allowed = [ROLES.staff, ROLES.seller].filter(Boolean);
+    const allowed = [ROLES.staff, ROLES.seller, ROLES.mod].filter(Boolean);
     if (!allowed.some(id => message.member.roles.cache.has(id))) {
       return message.channel.send({ content: `${E.deny} You need a higher role!` })
         .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));

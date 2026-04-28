@@ -83,9 +83,15 @@ async function createTicketChannel(interaction, ticketType, fields) {
   const ticketId = Math.floor(1000 + Math.random() * 9000);
   await channel.edit({ topic: `${user.id}|${ticketId}|${categoryId || ''}` });
 
-  const controlRow = new ActionRowBuilder().addComponents(
+  const controlButtons = [
     new ButtonBuilder().setCustomId('close_ticket').setLabel('Close').setStyle(ButtonStyle.Danger),
-  );
+  ];
+  if (ticketType === 'exchange') {
+    controlButtons.push(
+      new ButtonBuilder().setCustomId('change_amount').setLabel('Change Amount').setStyle(ButtonStyle.Primary),
+    );
+  }
+  const controlRow = new ActionRowBuilder().addComponents(...controlButtons);
 
   const embed = makeEmbed({
     title: 'Ticket Opened',
@@ -649,6 +655,61 @@ module.exports = {
         db.prepare('INSERT OR REPLACE INTO seller_config (user_id, key, value) VALUES (?, ?, ?)').run(interaction.user.id, 'tos', interaction.fields.getTextInputValue('tos_value'));
         return interaction.reply({ content: `${E.success} TOS saved for you.`, flags: MessageFlags.Ephemeral });
       }
+
+      // ── Change Amount modal submit ──
+      if (interaction.customId === 'modal_change_amount') {
+        const rawAmount = interaction.fields.getTextInputValue('new_amount').trim();
+        const amount = parseFloat(rawAmount);
+        if (isNaN(amount) || amount <= 0) {
+          return interaction.reply({ embeds: [errorEmbed('Please enter a valid positive number.')], flags: MessageFlags.Ephemeral });
+        }
+        if (amount < 2) {
+          return interaction.reply({ embeds: [errorEmbed('The minimum exchange amount is 2.00\u20AC.')], flags: MessageFlags.Ephemeral });
+        }
+
+        const channel = interaction.channel;
+
+        // Find the original ticket embed (first bot message with an Amount field)
+        const recentMsgs = await channel.messages.fetch({ limit: 15 });
+        const ticketMsg = recentMsgs.find(m =>
+          m.author.id === interaction.client.user?.id && m.embeds[0]?.fields?.some(f => f.name === 'Amount'),
+        );
+
+        if (!ticketMsg || !ticketMsg.embeds[0]) {
+          return interaction.reply({ content: `${E.deny} Could not find the ticket embed to update.`, flags: MessageFlags.Ephemeral });
+        }
+
+        const oldEmbed = ticketMsg.embeds[0];
+
+        // Determine currency from existing fields
+        const currencyField = oldEmbed.fields.find(f => f.name === 'Currency');
+        const currencyLabel = currencyField ? currencyField.value.replace(/`/g, '') : 'EUR';
+
+        // Determine fee from existing fields
+        const feeField = oldEmbed.fields.find(f => f.name === 'Fee');
+        let feePercent = EXCHANGE_FEES.default;
+        if (feeField) {
+          const pctMatch = feeField.value.match(/(\d+)%/);
+          if (pctMatch) feePercent = parseInt(pctMatch[1], 10);
+        }
+
+        const feeAmount = Math.round(amount * feePercent) / 100;
+        const totalAfterFee = Math.round((amount - feeAmount) * 100) / 100;
+
+        // Rebuild fields with updated amount
+        const newFields = oldEmbed.fields.map(f => {
+          if (f.name === 'Amount') return { name: f.name, value: `\`${amount.toFixed(2)} ${currencyLabel}\``, inline: f.inline };
+          if (f.name === 'Fee') return { name: f.name, value: `\`${feePercent}% (${feeAmount.toFixed(2)} ${currencyLabel})\``, inline: f.inline };
+          if (f.name === 'You Receive') return { name: f.name, value: `\`~${totalAfterFee.toFixed(2)} ${currencyLabel}\``, inline: f.inline };
+          return f;
+        });
+
+        const { EmbedBuilder } = require('discord.js');
+        const updatedEmbed = EmbedBuilder.from(oldEmbed).setFields(newFields);
+        await ticketMsg.edit({ embeds: [updatedEmbed] });
+
+        return interaction.reply({ content: `${E.success} Amount updated to **${amount.toFixed(2)} ${currencyLabel}**.` });
+      }
     }
 
     if (!interaction.isButton()) return;
@@ -656,6 +717,36 @@ module.exports = {
     if (interaction.customId === 'copy_value') {
       const ppField = interaction.message.embeds[0]?.fields?.find(f => f.name === 'PayPal Email');
       return interaction.reply({ content: ppField ? ppField.value : 'No value found.', flags: MessageFlags.Ephemeral });
+    }
+
+    // ── Change Amount button ──
+    if (interaction.customId === 'change_amount') {
+      const channel = interaction.channel;
+      if (!channel.topic || !channel.topic.includes('|')) {
+        return interaction.reply({ content: `${E.deny} Ticket data missing.`, flags: MessageFlags.Ephemeral });
+      }
+
+      const [creatorId] = channel.topic.split('|');
+
+      // Only the ticket creator or staff can change the amount
+      if (interaction.user.id !== creatorId && !isStaffOrMod(interaction.member)) {
+        return interaction.reply({ content: `${E.deny} Only the ticket creator or staff can change the amount.`, flags: MessageFlags.Ephemeral });
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId('modal_change_amount')
+        .setTitle('Change Exchange Amount');
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('new_amount')
+            .setLabel('Enter the new amount')
+            .setPlaceholder('e.g. 50')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true),
+        ),
+      );
+      return interaction.showModal(modal);
     }
 
     if (interaction.customId === 'exchange_terms_accept' || interaction.customId === 'exchange_terms_decline') {
@@ -711,31 +802,6 @@ module.exports = {
         }
       }
 
-      // Check exchanger security fee limit (staff bypass this check)
-      if (isExchanger(interaction.member) && !isStaffOrMod(interaction.member)) {
-        const limitRow = db.prepare('SELECT max_amount FROM exchanger_limits WHERE user_id = ?').get(interaction.user.id);
-        if (!limitRow) {
-          return interaction.reply({
-            content: `${E.deny} You do not have a security fee limit set. Ask a manager to run \`/securefee\` for you first.`,
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        // Sum of all active claims for this exchanger
-        const activeSum = db.prepare(
-          'SELECT COALESCE(SUM(amount), 0) AS total FROM exchange_claims WHERE exchanger_id = ? AND status = ?',
-        ).get(interaction.user.id, 'active');
-        const usedBudget = activeSum.total;
-        const remaining = limitRow.max_amount - usedBudget;
-
-        if (ticketAmount > remaining) {
-          return interaction.reply({
-            content: `${E.deny} You cannot claim this ticket. Your remaining budget is **${remaining.toFixed(2)}\u20AC** but this ticket is **${ticketAmount.toFixed(2)}\u20AC**.`,
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-      }
-
       // Record the claim
       db.prepare(
         'INSERT INTO exchange_claims (ticket_id, channel_id, exchanger_id, amount, status) VALUES (?, ?, ?, ?, ?)',
@@ -761,7 +827,9 @@ module.exports = {
           `${E.success} This ticket has been claimed by ${interaction.user}.`,
           '',
           `${E.arrowe} The exchanger will now handle your exchange.`,
-          `${E.arrowe} Only deal with ${interaction.user} \u2014 do not trust anyone else.`,
+          `${E.arrowe} Only deal with ${interaction.user} \u2014 do not pay anyone else.`,
+          `${E.arrowe} Dont deal with an exchanger with an amount higher that his max fees.`,
+          `${E.arrowe} Approve team are not reliable if you get scammed (if you pay higher than the exchangers fee)`,
         ].join('\n'),
       });
 
@@ -774,7 +842,7 @@ module.exports = {
     }
 
     if (interaction.customId === 'set_pp') {
-      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam].filter(Boolean);
+      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam, ROLES.exchanger].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
         return interaction.reply({ content: `${E.deny} You are not a staff member.`, flags: MessageFlags.Ephemeral });
       }
@@ -790,7 +858,7 @@ module.exports = {
     }
 
     if (interaction.customId === 'set_ltc') {
-      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam].filter(Boolean);
+      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam, ROLES.exchanger].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
         return interaction.reply({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
@@ -806,7 +874,7 @@ module.exports = {
     }
 
     if (interaction.customId === 'set_tos') {
-      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam].filter(Boolean);
+      const allowed = [ROLES.staff, ROLES.seller, ROLES.approveteam, ROLES.exchanger].filter(Boolean);
       if (!allowed.some(id => interaction.member.roles.cache.has(id))) {
         return interaction.reply({ content: `${E.deny} You need a higher role!`, flags: MessageFlags.Ephemeral });
       }
@@ -1020,13 +1088,23 @@ module.exports = {
           const db = getDb();
           db.prepare('INSERT OR REPLACE INTO transcripts (ticket_id, filepath) VALUES (?, ?)').run(ticketId, filepath);
 
+          // Determine ticket type from channel name for embed color
+          let ticketType = 'support';
+          const chanName = channel.name.toLowerCase();
+          if (chanName.startsWith('purchase') || chanName.startsWith('vouch')) ticketType = 'purchase';
+          else if (chanName.startsWith('exchange')) ticketType = 'exchange';
+
+          const TRANSCRIPT_COLORS = { purchase: 0x2ecc71, exchange: 0xf1c40f, support: 0xe74c3c };
+
           const embed = makeEmbed({
             title: `${E.tool} Ticket Transcript`,
             description: `${E.hashtag} Ticket ID: \`${ticketId}\``,
           });
+          embed.setColor(TRANSCRIPT_COLORS[ticketType] || TRANSCRIPT_COLORS.support);
           embed.addFields(
             { name: 'Ticket Owner', value: `<@${creatorId}>`, inline: true },
             { name: 'Channel', value: channel.name, inline: true },
+            { name: 'Type', value: ticketType.charAt(0).toUpperCase() + ticketType.slice(1), inline: true },
           );
 
           if (CHANNELS.transcript) {

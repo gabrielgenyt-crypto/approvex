@@ -23,7 +23,7 @@ function isStaffOrMod(member) {
 }
 
 function isSellerOrHigher(member) {
-  return isStaffOrMod(member) || (ROLES.seller && member.roles.cache.has(ROLES.seller));
+  return isStaffOrMod(member) || (ROLES.seller && member.roles.cache.has(ROLES.seller)) || isExchanger(member);
 }
 
 function isExchanger(member) {
